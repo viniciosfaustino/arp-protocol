@@ -6,9 +6,8 @@
 // Node of the linked list where the ARP table will be stored
 typedef struct lNode
 {
-  unsigned int id;
   unsigned int ipAddress;
-  unsigned int macAddress[6];
+  unsigned char macAddress[6];
   short int ttl;
   struct lNode *next;
 } Node;
@@ -17,9 +16,14 @@ char addLine(Node*, Node*);
 
 char removeLine(Node*, unsigned int);
 
-char searchLine(Node*, unsigned int, Node*);
+Node* newLine(unsigned int, unsigned char*, short int);
 
-void printLine(Node*);
+// This functions returns a pointer to the previous node
+// of the node who has the requested ip address
+// if Null means that there is no node with the given ip address
+Node* searchLine(Node*, unsigned int);
+
+void printLine(Node*, unsigned int);
 
 void printTable(Node*);
 
