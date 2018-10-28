@@ -20,7 +20,7 @@
 #define ADD_LINE    2
 #define DEL_LINE    3
 #define SET_TTL     4
-#define LIST_IFCES  5
+#define LIST_IFCES  5 // just for xifconfig
 
 // -------- End inter program communication ----------
 
