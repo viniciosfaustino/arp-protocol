@@ -56,7 +56,7 @@ void printLine(Node *line, unsigned int lineId)
 
 void printTable(Node *table)
 {
-  printf("HEADER LINE\n");
+  printf("  Entrada  |   Endereço IP   | Endereço Ethernet | TTL\n");
   Node *n = table->next;
 
   unsigned int i = 0;
