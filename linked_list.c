@@ -84,15 +84,15 @@ Node* newLine(unsigned int ipAddress, unsigned char *macAddress, short int ttl)
   return node;
 }
 
-int main()
-{
-  unsigned char macAddress[6] = {62, 92, 63, 93, 64, 94};
-  Node* l0 = newLine(0, macAddress, 64);
-  Node table;
-  table.next = NULL;
-  addLine(&table, l0);
-  printTable(&table);
-  removeLine(&table, 0);
-  printTable(&table);
-  return 0;
-}
+// int main()
+// {
+//   unsigned char macAddress[6] = {62, 92, 63, 93, 64, 94};
+//   Node* l0 = newLine(0, macAddress, 64);
+//   Node table;
+//   table.next = NULL;
+//   addLine(&table, l0);
+//   printTable(&table);
+//   removeLine(&table, 0);
+//   printTable(&table);
+//   return 0;
+// }

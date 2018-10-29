@@ -1,5 +1,6 @@
 #include "definitions.h"
 #include "xarp.h"
+#include "communication.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -14,6 +15,15 @@ char getOperation(const char* c)
   else if(strcmp("ttl", c) == 0) return SET_TTL;
 
   return __ERROR__;
+}
+
+void showArpTable()
+{
+  int socket = _socket();
+  char requestPacket[13];
+  requestPacket[0] = SHOW_TABLE;
+  sendPacket(socket, LOOPBACK_IP, XARPD_PORT, requestPacket, 13);
+
 }
 
 // In the main will be implemented the parser

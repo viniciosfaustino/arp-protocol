@@ -1,7 +1,11 @@
 #include "communication.h"
 
 #include <stdlib.h>
-
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 void errorHandler(void)
 {
@@ -19,11 +23,11 @@ int _socket(void)
   return sockfd;
 }
 
-void loadSocketInfo(struct sockaddr_in *serv_addr, int port)
+void loadSocketInfo(struct sockaddr_in *serv_addr, const char *ipAddress, int port)
 {
   memset((char*) serv_addr, 0, sizeof(*serv_addr));
   serv_addr->sin_family = AF_INET;
-  serv_addr->sin_addr.s_addr = INADDR_ANY;
+  serv_addr->sin_addr.s_addr = inet_addr(ipAddress);
   serv_addr->sin_port = port;
 }
 
@@ -81,4 +85,21 @@ void _send(int newsockfd, char *message, unsigned int messageSize)
         errorHandler();
       }
   } while (n < messageSize);
+}
+
+void _connect(int socket, struct sockaddr_in* serv_addr, unsigned int sockSize)
+{
+  int ret = connect(socket, (struct sockaddr*) serv_addr, sockSize);
+  if(ret < 0)
+  {
+    errorHandler();
+  }
+}
+
+void sendPacket(int socket, const char *ipAddress, int port, char* packet, unsigned int packetSize)
+{
+    struct sockaddr_in serv_addr;
+    loadSocketInfo(&serv_addr, ipAddress, port);
+    _connect(socket, &serv_addr, sizeof(serv_addr));
+    _send(socket, packet, packetSize);
 }
