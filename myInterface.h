@@ -3,7 +3,8 @@
 
 typedef struct
 {
-  unsigned char[6] macAddress;
+  unsigned char name[IFNAMSIZ];
+  unsigned char macAddress[6];
   unsigned int ipAddress;
   unsigned int broadcastAddress;
   unsigned int netMask;

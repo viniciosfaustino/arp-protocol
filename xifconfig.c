@@ -4,6 +4,7 @@
 #include <net/if.h>
 #include <string.h>
 #include <sys/socket.h>
+#include "myInterface.h"
 
 void setInterface(int ipAddr, int ipNetmask, char* name)
 {
@@ -38,8 +39,22 @@ void setMTUSize(int mtu, char* name)
   ioctl(fd, SIOCSIFMTU, &ifr);
 }
 
-void printInterface()
+void printInterface(MyInterface interface )
 {
+  struct sockaddr_in addr;
+  addr.sin_addr.s_addr = interface.ipAddress;
+  printf("%s\t", interface.name);
+  printf("Endereco de HW %2X:%2X:%2X:%2X:%2X:%2X \n", interface.macAddress[0], interface.macAddress[1], interface.macAddress[2], interface.macAddress[3], interface.macAddress[4], interface.macAddress[5]);
+  printf("inet end.: %s\t",inet_ntoa(addr.sin_addr));
+  addr.sin_addr.s_addr = interface.broadcastAddress;
+  printf("Bcast: %s\t",inet_ntoa(addr.sin_addr));
+  addr.sin_addr.s_addr = interface.netMask;
+  printf("Masc: %s\n",inet_ntoa(addr.sin_addr));
+  printf("UP MTU: %d\n", interface.mtu);
+  printf("RX packets: %d\t", interface.rxPackets);
+  printf("TX packets: %d\n", interface.txPackets);
+  printf("RX bytes: %ld\t", interface.rxBytes);
+  printf("TX bytes: %ld\n", interface.rxBytes);
 
 }
 int main(int argc, char const *argv[]) {
