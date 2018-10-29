@@ -1,8 +1,11 @@
 #include "definitions.h"
+#include "xarp.h"
 
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-unsigned char getOperation(const char* c)
+char getOperation(const char* c)
 {
   if(strcmp("show", c) == 0) return SHOW_TABLE;
   else if(strcmp("res", c) == 0) return RES_IP;
@@ -24,7 +27,7 @@ int main(int argc, char *argv[])
   }
 
   char opCode = getOperation(argv[1]);
-
+  char ret;
   switch(opCode)
   {
     case SHOW_TABLE:
@@ -49,7 +52,7 @@ int main(int argc, char *argv[])
         // print error
         exit(1);
       }
-      char ret = addEntry(argv[2], argv[3], argv[4]);
+      ret = addEntry(argv[2], argv[3], argv[4]);
       if(ret == __OK__) printf("Input added correctly\n");
       else printf("Error when adding entry\n");
       break;
@@ -59,7 +62,7 @@ int main(int argc, char *argv[])
         // print error
         exit(1);
       }
-      char ret = delEntry(const char *ipAddress);
+      ret = delEntry(argv[2]);
       if(ret == __OK__) printf("Entry deleted sucessfully\n");
       else printf("There is no entry with this address");
       break;
