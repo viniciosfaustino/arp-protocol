@@ -32,12 +32,14 @@ struct iface {
 	unsigned int	tx_pkts;
 	unsigned int	tx_bytes;
 };
+
 /* */
 struct ether_hdr {
 	unsigned char	ether_dhost[6];	// Destination address
 	unsigned char	ether_shost[6];	// Source address
 	unsigned short	ether_type;	// Type of the payload
 };
+
 /* */
 struct ip_hdr {
 
@@ -96,11 +98,14 @@ void get_iface_info(int sockfd, char *ifname, struct iface *ifn)
 	struct ifreq s;
 
 	strcpy(s.ifr_name, ifname);
-	if (0 == ioctl(sockfd, SIOCGIFHWADDR, &s)) {
+	if (0 == ioctl(sockfd, SIOCGIFHWADDR, &s))
+	{
 		memcpy(ifn->mac_addr, s.ifr_addr.sa_data, ETH_ADDR_LEN);
 		ifn->sockfd = sockfd;
 		strcpy(ifn->ifname, ifname);
-	} else {
+	}
+	else
+	{
 		perror("Error getting MAC address");
 		exit(1);
 	}
@@ -152,20 +157,24 @@ void read_iface(struct iface *ifn)
 }
 /* */
 // main function
-int main(int argc, char** argv) {
-	int		i, sockfd;
+int main(int argc, char** argv)
+{
+	int i, sockfd;
 
 	if (argc < 2)
 		print_usage();
 
-	for (i = 1; i < argc; i++) {
+	for (i = 1; i < argc; i++)
+	{
 		sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-		if(sockfd < 0) {
+		if(sockfd < 0)
+		{
 			fprintf(stderr, "ERROR: %s\n", strerror(errno));
 			exit(1);
 		}
 
-		if (bind_iface_name(sockfd, argv[i]) < 0) {
+		if (bind_iface_name(sockfd, argv[i]) < 0)
+		{
 			perror("Server-setsockopt() error for SO_BINDTODEVICE");
 			printf("%s\n", strerror(errno));
 			close(sockfd);
@@ -174,7 +183,8 @@ int main(int argc, char** argv) {
 		get_iface_info(sockfd, argv[i], &my_ifaces[i-1]);
 	}
 
-	for (i = 0; i < argc-1; i++) {
+	for (i = 0; i < argc-1; i++)
+	{
 		print_eth_address(my_ifaces[i].ifname, my_ifaces[i].mac_addr);
 		printf("\n");
 		// Create one thread for each interface. Each thread should run the function read_iface.
