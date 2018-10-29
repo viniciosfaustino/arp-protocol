@@ -1,5 +1,5 @@
-unsigned char setInterface(int ipAddr, int inNetmask)
+void setInterface(int, int)
 
-unsigned char setMTUSize(int);
+void setMTUSize(int);
 
 void printInterface();
