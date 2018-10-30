@@ -5,32 +5,26 @@
 #include <string.h>
 #include <sys/socket.h>
 #include "myInterface.h"
+#include <stdlib.h>
 
-void setInterface(int ipAddr, int ipNetmask, char* name)
+void setInterface(const char* ipAddr, const char* ipNetmask, char* name)
 {
   struct ifreq ifr;
   int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
 
-  struct sockaddr_in addr;
-  addr.sin_addr.s_addr = ipAddr;
-
-
   strncpy(ifr.ifr_name, name, IFNAMSIZ);
 
   ifr.ifr_addr.sa_family = AF_INET;
-  char *ipAd = inet_ntoa(addr.sin_addr);
-  addr.sin_addr.s_addr = ipNetmask;
-  char *ipNM = inet_ntoa(addr.sin_addr);
 
-  inet_pton(AF_INET, ipAd, ifr.ifr_addr.sa_data + 2);
+  inet_pton(AF_INET, ipAddr, ifr.ifr_addr.sa_data + 2);
   ioctl(fd, SIOCSIFADDR, &ifr);
 
-  inet_pton(AF_INET, ipNM, ifr.ifr_addr.sa_data + 2);
+  inet_pton(AF_INET, ipNetmask, ifr.ifr_addr.sa_data + 2);
   ioctl(fd, SIOCSIFNETMASK, &ifr);
 
 }
 
-void setMTUSize(int mtu, char* name)
+void setMTUSize(int mtu, const char* name)
 {
   struct ifreq ifr;
   strncpy(ifr.ifr_name, name, IFNAMSIZ);
@@ -57,7 +51,26 @@ void printInterface(MyInterface interface )
   printf("TX bytes: %ld\n", interface.rxBytes);
 
 }
+
 int main(int argc, char const *argv[]) {
-  /* code */
+  if (argc == 1)
+  {
+    //aqui tem que ter alguma forma de recuperar todas as interfaces e mandar isso como parametro para a print interface
+  }
+  else if(strcmp(argv[2], "mtu") == 0)
+  {
+    if (argc == 4)
+    {
+      int size = atoi(argv[3]);
+      setMTUSize(size, argv[1]);
+    }else
+    {
+      setMTUSize(1500, argv[1]);
+    }
+  }
+  else
+  {
+    setInterface(argv[2], argv[3], argv[1]);
+  }
   return 0;
 }
