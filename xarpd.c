@@ -11,6 +11,8 @@
 #include <net/ethernet.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <pthread.h>
+
 /* */
 /* */
 #define MAX_PACKET_SIZE 65536
@@ -113,7 +115,7 @@ void get_iface_info(int sockfd, char *ifname, struct iface *ifn)
 // Print the expected command line for the program
 void print_usage()
 {
-	printf("\xarpd <interface> [<interfaces>]\n");
+	printf("\nxarpd <interface> [<interfaces>]\n");
 	exit(1);
 }
 /* */
@@ -125,6 +127,17 @@ void doProcess(unsigned char* packet, int len) {
 	struct ether_hdr* eth = (struct ether_hdr*) packet;
 
 	if(htons(0x0806) == eth->ether_type) {
+    unsigned char* arpPacket = (packet + 14);
+    struct arp_hdr *arp = (struct arp_hdr*) arpPacket;
+    if (ntohs(arp->opcode) == 1)
+    {
+      //search the address in the interface table
+
+    }
+    else
+    {
+      // I don't know what to do yet
+    }
 		// ARP
 		//...
 	}
@@ -132,8 +145,10 @@ void doProcess(unsigned char* packet, int len) {
 }
 /* */
 // This function should be one thread for each interface.
-void read_iface(struct iface *ifn)
+void read_iface( (void *)arg)
 {
+  struct iface * ifn;
+  ifn = (struct iface *) arg;
 	socklen_t	saddr_len;
 	struct sockaddr	saddr;
 	unsigned char	*packet_buffer;
@@ -156,6 +171,7 @@ void read_iface(struct iface *ifn)
 	}
 }
 /* */
+
 // main function
 int main(int argc, char** argv)
 {
@@ -163,6 +179,8 @@ int main(int argc, char** argv)
 
 	if (argc < 2)
 		print_usage();
+
+  pthread_t tid[argc - 1];
 
 	for (i = 1; i < argc; i++)
 	{
@@ -187,8 +205,13 @@ int main(int argc, char** argv)
 	{
 		print_eth_address(my_ifaces[i].ifname, my_ifaces[i].mac_addr);
 		printf("\n");
+    err = pthread_create(&(tid[i]), NULL, &read_iface, (void *) &my_ifaces[i]);
 		// Create one thread for each interface. Each thread should run the function read_iface.
 	}
+  for (i = 0; i < argc - 1; i++)
+  {
+    pthread_join(tid[i], NULL);
+  }
 	return 0;
 }
 /* */
