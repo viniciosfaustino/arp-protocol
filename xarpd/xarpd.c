@@ -22,7 +22,7 @@
 #define MAX_IFACES	64
 #define ETH_ADDR_LEN	6
 
-MyInterface my_ifaces[MAX_IFACES];
+MyInterface *my_ifaces;
 
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
@@ -132,6 +132,8 @@ int main(int argc, char** argv)
 
   pthread_t tid[argc - 1];
 
+	my_ifaces = (MyInterface*) malloc((argc-1) * sizeof(MyInterface));
+
 	for (i = 1; i < argc; i++)
 	{
 		sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -155,7 +157,7 @@ int main(int argc, char** argv)
 	{
 		print_eth_address(my_ifaces[i].name, my_ifaces[i].macAddress);
 		printf("\n");
-    int err = pthread_create(&(tid[i]), NULL, &read_iface, (void *) &my_ifaces[i]);
+    int err = pthread_create(&(tid[i]), NULL, (void*) read_iface, (void *) &my_ifaces[i]);
 		// Create one thread for each interface. Each thread should run the function read_iface.
 	}
   for (i = 0; i < argc - 1; i++)
