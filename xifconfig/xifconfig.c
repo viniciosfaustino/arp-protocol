@@ -4,7 +4,7 @@
 #include <net/if.h>
 #include <string.h>
 #include <sys/socket.h>
-#include "myInterface.h"
+#include "my_interface.h"
 #include <stdlib.h>
 
 void setInterface(const char* ipAddr, const char* ipNetmask, char* name)

@@ -1,4 +1,4 @@
-#include "definitions.h"
+#include "../definitions.h"
 #include "linked_list.h"
 
 #include <stdio.h>
