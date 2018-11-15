@@ -11,13 +11,14 @@
 #include <net/ethernet.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <pthread.h>#define MAX_PACKET_SIZE 65536
+#include <pthread.h>
+#define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
 
 #define MAX_IFACES	64
 #define ETH_ADDR_LEN	6
 
-struct MyInterface my_ifaces[MAX_IFACES];
+MyInterface my_ifaces[MAX_IFACES];
 
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
@@ -33,16 +34,16 @@ int bind_iface_name(int fd, char *iface_name)
 	return setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, iface_name, strlen(iface_name));
 }
 
-void get_iface_info(int sockfd, char *ifname, struct iface *ifn)
+void get_iface_info(int sockfd, char *ifname, MyInterface *ifn)
 {
 	struct ifreq s;
 
 	strcpy(s.ifr_name, ifname);
 	if (0 == ioctl(sockfd, SIOCGIFHWADDR, &s))
 	{
-		memcpy(ifn->mac_addr, s.ifr_addr.sa_data, ETH_ADDR_LEN);
+		memcpy(ifn->macAddress, s.ifr_addr.sa_data, ETH_ADDR_LEN);
 		ifn->sockfd = sockfd;
-		strcpy(ifn->ifname, ifname);
+		strcpy(ifn->name, ifname);
 	}
 	else
 	{
@@ -86,7 +87,7 @@ void doProcess(unsigned char* packet, int len) {
 
 
 // This function should be one thread for each interface.
-void read_iface( (void *)arg)
+void read_iface(MyInterface *ifn)
 {
   struct iface * ifn;
   ifn = (struct iface *) arg;
@@ -144,7 +145,7 @@ int main(int argc, char** argv)
 
 	for (i = 0; i < argc-1; i++)
 	{
-		print_eth_address(my_ifaces[i].ifname, my_ifaces[i].mac_addr);
+		print_eth_address(my_ifaces[i].name, my_ifaces[i].macAddress);
 		printf("\n");
     err = pthread_create(&(tid[i]), NULL, &read_iface, (void *) &my_ifaces[i]);
 		// Create one thread for each interface. Each thread should run the function read_iface.
