@@ -12,6 +12,10 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <pthread.h>
+
+#include "../my_interface.h"
+#include "protocol_headers.h"
+
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
 
@@ -67,10 +71,11 @@ void doProcess(unsigned char* packet, int len) {
 
 	struct ether_hdr* eth = (struct ether_hdr*) packet;
 
-	if(htons(0x0806) == eth->ether_type) {
+	if(htons(0x0806) == eth->ether_type) // is a arp packet
+	{
     unsigned char* arpPacket = (packet + 14);
     struct arp_hdr *arp = (struct arp_hdr*) arpPacket;
-    if (ntohs(arp->opcode) == 1)
+    if (ntohs(arp->arp_op) == 1)
     {
       //search the address in the interface table
 
@@ -87,23 +92,26 @@ void doProcess(unsigned char* packet, int len) {
 
 
 // This function should be one thread for each interface.
-void read_iface(MyInterface *ifn)
+void read_iface(MyInterface *arg)
 {
-  struct iface * ifn;
-  ifn = (struct iface *) arg;
+  MyInterface *ifn;
+  ifn = (MyInterface*) arg;
 	socklen_t	saddr_len;
 	struct sockaddr	saddr;
 	unsigned char	*packet_buffer;
-	int		n;
+	int n;
 
 	saddr_len = sizeof(saddr);
 	packet_buffer = malloc(MAX_PACKET_SIZE);
-	if (!packet_buffer) {
+
+	if (!packet_buffer)
+	{
 		printf("\nCould not allocate a packet buffer\n");
 		exit(1);
 	}
 
-	while(1) {
+	while(1)
+	{
 		n = recvfrom(ifn->sockfd, packet_buffer, MAX_PACKET_SIZE, 0, &saddr, &saddr_len);
 		if(n < 0) {
 			fprintf(stderr, "ERROR: %s\n", strerror(errno));
@@ -147,7 +155,7 @@ int main(int argc, char** argv)
 	{
 		print_eth_address(my_ifaces[i].name, my_ifaces[i].macAddress);
 		printf("\n");
-    err = pthread_create(&(tid[i]), NULL, &read_iface, (void *) &my_ifaces[i]);
+    int err = pthread_create(&(tid[i]), NULL, &read_iface, (void *) &my_ifaces[i]);
 		// Create one thread for each interface. Each thread should run the function read_iface.
 	}
   for (i = 0; i < argc - 1; i++)
