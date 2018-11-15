@@ -11,74 +11,19 @@
 #include <net/ethernet.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-/* */
-/* */
+
+#include "../my_interface.h"
+#include "protocol_headers.h"
+
+
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
-/* */
+
 #define MAX_IFACES	64
-#define MAX_IFNAME_LEN	22
 #define ETH_ADDR_LEN	6
-/* */
-struct iface {
-	int		sockfd;
-	int		ttl;
-	int		mtu;
-	char		ifname[MAX_IFNAME_LEN];
-	unsigned char	mac_addr[6];
-	unsigned int	ip_addr;
-	unsigned int	rx_pkts;
-	unsigned int	rx_bytes;
-	unsigned int	tx_pkts;
-	unsigned int	tx_bytes;
-};
 
-/* */
-struct ether_hdr {
-	unsigned char	ether_dhost[6];	// Destination address
-	unsigned char	ether_shost[6];	// Source address
-	unsigned short	ether_type;	// Type of the payload
-};
+struct MyInterface my_ifaces[MAX_IFACES];
 
-/* */
-struct ip_hdr {
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	unsigned char	ip_ihl:4,
-			ip_v:4;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	unsigned char	ip_ihl:4,
-			ip_v:4;
-#endif
-	unsigned char	ip_tos;		// Type of service
-	unsigned short	ip_len;		// Datagram Length
-	unsigned short	ip_id;		// Datagram identifier
-	unsigned short	ip_offset;	// Fragment offset
-	unsigned char	ip_ttl;		// Time To Live
-	unsigned char	ip_proto;	// Protocol
-	unsigned short	ip_csum;	// Header checksum
-	unsigned int	ip_src;		// Source IP address
-	unsigned int	ip_dst;		// Destination IP address
-};
-/* */
-// Read RFC 826 to define the ARP struct
-struct arp_hdr
-{
-  unsigned short arp_hd;
-  unsigned short arp_pr;
-  unsigned char arp_hdl;
-  unsigned char arp_prl;
-  unsigned short arp_op;
-  unsigned char arp_sha[6];
-  unsigned char arp_spa[4];
-  unsigned char arp_dha[6];
-  unsigned char arp_dpa[4];
-};
-/* */
-//
-//
-struct iface	my_ifaces[MAX_IFACES];
-//
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
 {
@@ -86,13 +31,13 @@ void print_eth_address(char *s, unsigned char *eth_addr)
 	       eth_addr[0], eth_addr[1], eth_addr[2],
 	       eth_addr[3], eth_addr[4], eth_addr[5]);
 }
-/* */
+
 // Bind a socket to an interface
 int bind_iface_name(int fd, char *iface_name)
 {
 	return setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, iface_name, strlen(iface_name));
 }
-/* */
+
 void get_iface_info(int sockfd, char *ifname, struct iface *ifn)
 {
 	struct ifreq s;
@@ -110,13 +55,15 @@ void get_iface_info(int sockfd, char *ifname, struct iface *ifn)
 		exit(1);
 	}
 }
+
 // Print the expected command line for the program
 void print_usage()
 {
-	printf("\xarpd <interface> [<interfaces>]\n");
+	printf("xarpd <interface> [<interfaces>]\n");
 	exit(1);
 }
-/* */
+
+
 // Break this function to implement the ARP functionalities.
 void doProcess(unsigned char* packet, int len) {
 	if(!len || len < MIN_PACKET_SIZE)
@@ -130,7 +77,8 @@ void doProcess(unsigned char* packet, int len) {
 	}
 	// Ignore if it is not an ARP packet
 }
-/* */
+
+
 // This function should be one thread for each interface.
 void read_iface(struct iface *ifn)
 {
