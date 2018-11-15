@@ -14,6 +14,7 @@
 
 #include "../my_interface.h"
 #include "protocol_headers.h"
+#include "linked_list.h"
 
 
 #define MAX_PACKET_SIZE 65536
@@ -22,7 +23,7 @@
 #define MAX_IFACES	64
 #define ETH_ADDR_LEN	6
 
-struct MyInterface my_ifaces[MAX_IFACES];
+MyInterface my_ifaces[MAX_IFACES];
 
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
@@ -38,16 +39,16 @@ int bind_iface_name(int fd, char *iface_name)
 	return setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, iface_name, strlen(iface_name));
 }
 
-void get_iface_info(int sockfd, char *ifname, struct iface *ifn)
+void get_iface_info(int sockfd, char *ifname, MyInterface *ifn)
 {
 	struct ifreq s;
 
 	strcpy(s.ifr_name, ifname);
 	if (0 == ioctl(sockfd, SIOCGIFHWADDR, &s))
 	{
-		memcpy(ifn->mac_addr, s.ifr_addr.sa_data, ETH_ADDR_LEN);
+		memcpy(ifn->macAddress, s.ifr_addr.sa_data, ETH_ADDR_LEN);
 		ifn->sockfd = sockfd;
-		strcpy(ifn->ifname, ifname);
+		strcpy(ifn->name, ifname);
 	}
 	else
 	{
@@ -80,7 +81,7 @@ void doProcess(unsigned char* packet, int len) {
 
 
 // This function should be one thread for each interface.
-void read_iface(struct iface *ifn)
+void read_iface(MyInterface *ifn)
 {
 	socklen_t	saddr_len;
 	struct sockaddr	saddr;
@@ -133,7 +134,7 @@ int main(int argc, char** argv)
 
 	for (i = 0; i < argc-1; i++)
 	{
-		print_eth_address(my_ifaces[i].ifname, my_ifaces[i].mac_addr);
+		print_eth_address(my_ifaces[i].name, my_ifaces[i].macAddress);
 		printf("\n");
 		// Create one thread for each interface. Each thread should run the function read_iface.
 	}
