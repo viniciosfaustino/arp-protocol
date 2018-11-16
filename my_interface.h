@@ -7,7 +7,7 @@ typedef struct
 {
   int		sockfd;
 	int		ttl;
-  unsigned short mtu = 1500;
+  unsigned short mtu;
   unsigned char name[MAX_IFNAME_LEN];
   unsigned char macAddress[6];
   unsigned int ipAddress;
