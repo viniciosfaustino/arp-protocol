@@ -15,6 +15,7 @@
 
 #include "../my_interface.h"
 #include "protocol_headers.h"
+#include "../communication.h"
 
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
@@ -122,19 +123,11 @@ void read_iface(MyInterface *arg)
 }
 /* */
 
-// main function
-int main(int argc, char** argv)
+void loadIfces(int argc, char **argv)
 {
-	int i, sockfd;
+	int sockfd;
 
-	if (argc < 2)
-		print_usage();
-
-  pthread_t tid[argc - 1];
-
-	my_ifaces = (MyInterface*) malloc((argc-1) * sizeof(MyInterface));
-
-	for (i = 1; i < argc; i++)
+	for (int i = 1; i < argc; i++)
 	{
 		sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 		if(sockfd < 0)
@@ -151,7 +144,23 @@ int main(int argc, char** argv)
 			exit(1);
 		}
 		get_iface_info(sockfd, argv[i], &my_ifaces[i-1]);
+		my_ifaces[i-1].mtu = 1500;
 	}
+}
+
+// main function
+int main(int argc, char** argv)
+{
+	int i;
+
+	if (argc < 2)
+		print_usage();
+
+  pthread_t tid[argc - 1];
+
+	my_ifaces = (MyInterface*) malloc((argc-1) * sizeof(MyInterface));
+
+	loadIfces(argc, argv);
 
 	for (i = 0; i < argc-1; i++)
 	{
@@ -164,6 +173,8 @@ int main(int argc, char** argv)
   {
     pthread_join(tid[i], NULL);
   }
+
+	// The rest of the code is to respond the requests from xarpd and xifconfig
 	return 0;
 }
 /* */
