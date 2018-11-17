@@ -5,7 +5,7 @@
 
 void errorHandler(void);
 
-int _socket(void);
+int _socket(int, int, int);
 
 void loadSocketInfo(struct sockaddr_in*, const char *, int);
 

@@ -33,7 +33,7 @@ void setMTUSize(int mtu, const char* name)
   ioctl(fd, SIOCSIFMTU, &ifr);
 }
 
-void printInterface(MyInterface interface )
+void printInterface(MyInterface interface)
 {
   struct sockaddr_in addr;
   addr.sin_addr.s_addr = interface.ipAddress;
@@ -52,7 +52,10 @@ void printInterface(MyInterface interface )
 
 }
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char const *argv[])
+{
+  // Builds the essential to communicate with xarpd
+  
   if (argc == 1)
   {
     //aqui tem que ter alguma forma de recuperar todas as interfaces e mandar isso como parametro para a print interface
