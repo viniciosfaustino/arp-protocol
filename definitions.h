@@ -12,6 +12,7 @@
 #define DEFAULT_TTL 60
 #define LOOPBACK_IP "127.0.0.1"
 #define XARPD_PORT  5050
+#define LISTEN_ENQ 5 // listen queue size
 // -------------- End general macros -----------------
 
 // ---------- Inter program communication ------------

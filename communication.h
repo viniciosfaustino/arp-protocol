@@ -21,4 +21,6 @@ void _connect(int, struct sockaddr_in*, unsigned int);
 
 void sendPacket(int, const char *, int, char *, unsigned int);
 
+int _accept(int, struct sockaddr*);
+
 #endif

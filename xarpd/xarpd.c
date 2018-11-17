@@ -14,6 +14,7 @@
 #include <pthread.h>
 
 #include "../my_interface.h"
+#include "../definitions.h"
 #include "protocol_headers.h"
 #include "../communication.h"
 
@@ -23,7 +24,9 @@
 #define MAX_IFACES	64
 #define ETH_ADDR_LEN	6
 
+// Global ugly variables
 MyInterface *my_ifaces;
+int numIfaces;
 
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
@@ -148,6 +151,57 @@ void loadIfces(int argc, char **argv)
 	}
 }
 
+void sendIfaces(int socket)
+{
+	_send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
+}
+
+void server()
+{
+	unsigned char BUFFERSIZE = 255;
+	char buffer[BUFFERSIZE];
+
+	struct sockaddr_in serv_addr;
+	struct sockaddr_in cli_addr;
+  loadSocketInfo(&serv_addr, "0.0.0.0", XARPD_PORT);
+  int sockfd = _socket(AF_INET, SOCK_STREAM, 0);
+	_bind(&sockfd, (struct sockaddr*) &serv_addr);
+	_listen(sockfd, LISTEN_ENQ);
+	int n, k, newsockfd;
+	char opCode;
+	printf("SERVER THREAD IS RUNNING\n");
+	while(1)
+	{
+		printf("READ TO ACCEPT\n");
+		newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);
+		n = 0;
+		do
+		{
+			k = _recv(newsockfd, buffer+n, BUFFERSIZE-n);
+			n += k;
+		} while(k > 0);
+		close(newsockfd);
+
+		if(n > 0)
+		{
+			opCode = buffer[0];
+			printf("OPCODE: %d\n", opCode);
+			switch(opCode)
+			{
+				case LIST_IFCES:
+					newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);
+					sendIfaces(newsockfd);
+					printf("IFACES SENT\n");
+					break;
+				default:
+					printf("OPERATION NOT SUPPORTED BY XARPD\n");
+			}
+		}
+		close(newsockfd);
+	}
+
+}
+
 // main function
 int main(int argc, char** argv)
 {
@@ -156,11 +210,16 @@ int main(int argc, char** argv)
 	if (argc < 2)
 		print_usage();
 
-  pthread_t tid[argc - 1];
+  pthread_t tid[argc];
 
-	my_ifaces = (MyInterface*) malloc((argc-1) * sizeof(MyInterface));
+	numIfaces = argc-1;
+	my_ifaces = (MyInterface*) malloc(numIfaces * sizeof(MyInterface));
+	memset(my_ifaces, 0, numIfaces * sizeof(MyInterface));
 
 	loadIfces(argc, argv);
+
+	// This thread will be responsible for answer xarp and xifconfig demands
+	pthread_create(&tid[argc - 1], NULL, (void*) server, NULL);
 
 	for (i = 0; i < argc-1; i++)
 	{
@@ -169,10 +228,13 @@ int main(int argc, char** argv)
     int err = pthread_create(&(tid[i]), NULL, (void*) read_iface, (void *) &my_ifaces[i]);
 		// Create one thread for each interface. Each thread should run the function read_iface.
 	}
+
   for (i = 0; i < argc - 1; i++)
   {
     pthread_join(tid[i], NULL);
   }
+
+	pthread_join(tid[argc-1], NULL);
 
 	// The rest of the code is to respond the requests from xarpd and xifconfig
 	return 0;
