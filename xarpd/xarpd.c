@@ -28,6 +28,9 @@
 MyInterface *my_ifaces;
 int numIfaces;
 
+Node arpTable;
+arpTable->next = NULL;
+
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
 {
@@ -156,6 +159,11 @@ void sendIfaces(int socket)
 	_send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
 }
 
+void setTTL(short int ttl)
+{
+  //do something
+}
+
 void server()
 {
 	unsigned char BUFFERSIZE = 255;
@@ -172,7 +180,7 @@ void server()
 	printf("SERVER THREAD IS RUNNING\n");
 	while(1)
 	{
-		printf("READ TO ACCEPT\n");
+		printf("READY TO ACCEPT\n");
 		newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);
 		n = 0;
 		do
@@ -193,6 +201,10 @@ void server()
 					sendIfaces(newsockfd);
 					printf("IFACES SENT\n");
 					break;
+        case SET_TTL:
+          short int ttl = (buffer[2] << 8) | buffer[1];
+          setTTL(ttl);
+          printf("TTL SETUP\n");
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");
 			}

@@ -26,6 +26,16 @@ void showArpTable()
 
 }
 
+char addEntry(const char* ip, const char* mac, const char* ttl)
+{
+  //do something
+}
+
+void setTTL(short int ttl)
+{
+  //do something
+}
+
 // In the main will be implemented the parser
 int main(int argc, char *argv[])
 {
