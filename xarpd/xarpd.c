@@ -179,7 +179,7 @@ void sendIfaces(int socket)
 	unsigned int myIfaceLen = sizeof(MyInterface);
 	for(int i = 0; i < numIfaces; i++)
 	{
-		aux = my_ifaces[i];
+		aux = my_ifaces[i]; // a shallow copy is enough
 		//converts ifaces atributes to network byte order
 		iface2NetworkByteOrder(&aux);
 		_send(socket, (char*) &aux, myIfaceLen);
@@ -188,14 +188,20 @@ void sendIfaces(int socket)
 	// _send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
 }
 
-void configIface(const char *ifname, unsigned int ip, unsigned int mask)
+unsigned char getIfaceIndex(const char *ifname)
 {
-	int i;
+	unsigned char i;
 	for(i = 0; i < numIfaces; i++)
 	{
 		// paglijonson style
 		if(strcmp(my_ifaces[i].name, ifname) == 0) break;
 	}
+	return i;
+}
+
+void configIface(const char *ifname, unsigned int ip, unsigned int mask)
+{
+	unsigned char i = getIfaceIndex(ifname);
 
 	if(i < numIfaces) // iface found
 	{
@@ -204,7 +210,19 @@ void configIface(const char *ifname, unsigned int ip, unsigned int mask)
 		my_ifaces[i].netMask = mask;
 		sem_post(&ifaceMutexes[i]);
 	}
+}
 
+void setMTUSize(const char *ifname, unsigned short mtu)
+{
+	unsigned char i = getIfaceIndex(ifname);
+
+	if(i < numIfaces)
+	{
+		printf("%s: %u\n", ifname, mtu);
+		sem_wait(&ifaceMutexes[i]);
+		my_ifaces[i].mtu = mtu;
+		sem_post(&ifaceMutexes[i]);
+	}
 }
 
 void server()
@@ -238,6 +256,8 @@ void server()
 		{
 			opCode = buffer[0];
 			printf("OPCODE: %d\n", opCode);
+			message = buffer + 1;
+			char ifName[MAX_IFNAME_LEN];
 			switch(opCode)
 			{
 				case LIST_IFCES:
@@ -247,8 +267,6 @@ void server()
 					break;
 				case CONFIG_IFACE:
 					// message decode
-					message = buffer + 1;
-					char ifName[MAX_IFNAME_LEN];
 					strcpy(ifName, message);
 					unsigned char nameLen = strlen(ifName);
 					message += nameLen+1;
@@ -256,6 +274,13 @@ void server()
 					message += 4;
 					unsigned int mask = ntohl(*(unsigned int*)message);
 					configIface(ifName, ip, mask);
+					break;
+				case SET_IFACE_MTU:
+					// message decode
+					strcpy(ifName, message);
+					unsigned char ifaceNameLen = strlen(ifName);
+					unsigned short mtuSize = ntohs(* (unsigned short*)(message+ifaceNameLen+1));
+					setMTUSize(ifName, mtuSize);
 					break;
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");
