@@ -22,20 +22,6 @@ char getOperation(const char* c)
   return __ERROR__;
 }
 
-// void node2HostByteOrder()
-// {
-//   printf("%s\t", interface->name);
-//   printf("Endereco de HW %2X:%2X:%2X:%2X:%2X:%2X \n", interface->macAddress[0], interface->macAddress[1], interface->macAddress[2], interface->macAddress[3], interface->macAddress[4], interface->macAddress[5]);
-//   printf("inet end.: %s\t",inet_ntoa(addr.sin_addr));
-//   addr.sin_addr.s_addr = interface->broadcastAddress;
-//   printf("Bcast: %s\t",inet_ntoa(addr.sin_addr));
-//   addr.sin_addr.s_addr = interface->netMask;
-//   printf("Masc: %s\n",inet_ntoa(addr.sin_addr));
-//   printf("UP MTU: %d\n", ntohs(interface->mtu));
-//   printf("RX packets: %d\t", ntohl(interface->rxPackets));
-//   printf("TX packets: %d\n", ntohl(interface->txPackets));
-// }
-
 void showArpTable()
 {
   // Builds the essential to communicate with xarpd
@@ -76,10 +62,8 @@ void showArpTable()
 
 char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
 {
-  printf("entry ttl: %s", ttl);
   unsigned int ip = inet_addr(ipAddr); // converts from dot notation into binary
-  short int ttlSize = atoi(ttl);
-  printf("entry ttl: %d", ttlSize);
+  short int ttlSize = htons(atoi(ttl));
 
   unsigned int _mac[6];
   sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &_mac[0], &_mac[1], &_mac[2], &_mac[3], &_mac[4], &_mac[5]);
@@ -91,7 +75,6 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
   char message[messageLen];
   message[0] = ADD_LINE;
   memcpy(message+1, (char*)&ip, 4);
-  printf("Sent IP: %u\n", *((unsigned int*) (message+1)) );
   memcpy(message+1+4, (char*)&mac, 6);
   memcpy(message+1+4+6, (char*)&ttlSize, 2);
 
