@@ -176,6 +176,12 @@ void iface2NetworkByteOrder(MyInterface *iface)
 	tx[1] = htonl(tx[1]);
 }
 
+void line2NetworkByteOrder(Node *line)
+{
+  line->ipAddress = htonl(line->ipAddress);
+  line->ttl = htons(line->ttl);
+}
+
 void sendIfaces(int socket)
 {
 	MyInterface aux;
@@ -188,7 +194,17 @@ void sendIfaces(int socket)
 		_send(socket, (char*) &aux, myIfaceLen);
 	}
 
-	// _send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
+}
+
+void sendLines(int socket)
+{
+  Node *line = &arpTable;
+  unsigned int lineLen = sizeof(Node);
+  while (line->next != NULL)
+  {
+    line2NetworkByteOrder(line->next);
+    _send(socket, (char*) line->next, lineLen);
+  }
 }
 
 unsigned char getIfaceIndex(const char *ifname)
@@ -295,7 +311,7 @@ void server()
 
         case ADD_LINE:
           //add a new line on arp table
-          message = buffer + 1;
+          message = buffer;
           ip = ntohl(*(unsigned int*)message);
 					message += 4;
           int i = 0;
@@ -309,6 +325,8 @@ void server()
           Node *l = newLine(ip, mac, ttl);
           addLine(&arpTable, l);
           break;
+        case SHOW_TABLE:
+          sendLines(newsockfd);
 
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");

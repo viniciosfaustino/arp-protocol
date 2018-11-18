@@ -17,12 +17,47 @@ char getOperation(const char* c)
   return __ERROR__;
 }
 
+// void showArpTable()
+// {
+//   int socket = _socket();
+//   char pckt;
+//   pckt = SHOW_TABLE;
+//   sendPacket(socket, LOOPBACK_IP, XARPD_PORT, pckt, 1);
+//
+// }
+
 void showArpTable()
 {
-  int socket = _socket();
-  char requestPacket[13];
-  requestPacket[0] = SHOW_TABLE;
-  sendPacket(socket, LOOPBACK_IP, XARPD_PORT, requestPacket, 13);
+  // Builds the essential to communicate with xarpd
+  int socket;
+  struct sockaddr_in serv_addr;
+  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+
+  char request = SHOW_TABLE;
+  _send(socket, &request, 1);
+  close(socket);
+
+  int lineLen = sizeof(Node);
+  char *buffer = (char*) malloc(Node);
+  int n = 0;
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+  do
+  int count = 0;
+  {
+    if(n == lineLen) n = 0; // clean n for next interation
+
+    n += _recv(socket, buffer+n, lineLen-n);
+    if(n == lineLen)
+    {
+      // printInterface((MyInterface*) buffer);
+      printLine((Node*) buffer, count++);
+      printf("\n");
+    }
+  } while(n);
+
+  free(buffer);
+  close(socket);
 
 }
 
