@@ -18,6 +18,7 @@
 #include "../definitions.h"
 #include "protocol_headers.h"
 #include "../communication.h"
+#include "linked_list.h"
 
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
@@ -31,7 +32,6 @@ sem_t *ifaceMutexes;
 int numIfaces;
 
 Node arpTable;
-arpTable->next = NULL;
 
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
