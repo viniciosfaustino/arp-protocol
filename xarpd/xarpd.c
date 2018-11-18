@@ -30,6 +30,9 @@ MyInterface *my_ifaces;
 sem_t *ifaceMutexes;
 int numIfaces;
 
+Node arpTable;
+arpTable->next = NULL;
+
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
 {
@@ -225,6 +228,11 @@ void setMTUSize(const char *ifname, unsigned short mtu)
 	}
 }
 
+void setTTL(short int ttl)
+{
+  //do something
+}
+
 void server()
 {
 	unsigned char BUFFERSIZE = 255;
@@ -242,7 +250,7 @@ void server()
 	printf("SERVER THREAD IS RUNNING\n");
 	while(1)
 	{
-		printf("READ TO ACCEPT\n");
+		printf("READY TO ACCEPT\n");
 		newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);
 		n = 0;
 		do

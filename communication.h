@@ -23,4 +23,7 @@ void sendPacket(int, const char *, int, char *, unsigned int);
 
 int _accept(int, struct sockaddr*);
 
+void makeNewSocketAndConnect(int *, struct sockaddr_in*);
+
+
 #endif

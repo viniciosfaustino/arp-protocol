@@ -26,6 +26,37 @@ void showArpTable()
 
 }
 
+char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
+{
+  unsigned int ip = inet_addr(ipAddr); // converts from dot notation into binary
+  short int ttlSize = atoi(ttl);
+  int mac[6];
+  sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+
+  // Prepares info to send
+  // opcode ifacenName ipAddress netmask
+  unsigned char messageLen = 13;
+  char message[messageLen];
+  message[0] = ADD_LINE;
+  memcpy(message+1, (char*)&ip, 4);
+  memcpy(message+1+4, (char*)&mac, 6);
+  memcpy(message+1+4+6, (char*)&ttlSize, 2);
+
+  // Builds the essential to communicate with xarpd
+  int socket;
+  struct sockaddr_in serv_addr;
+  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+
+  _send(socket, message, messageLen);
+  close(socket);
+}
+
+void setTTL(short int ttl)
+{
+  //do something
+}
+
 // In the main will be implemented the parser
 int main(int argc, char *argv[])
 {
