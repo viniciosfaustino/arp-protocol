@@ -198,11 +198,13 @@ void sendIfaces(int socket)
 void sendLines(int socket)
 {
   Node *line = &arpTable;
+	Node aux;
   unsigned int lineLen = sizeof(Node);
   while (line->next != NULL)
   {
-    line2NetworkByteOrder(line->next);
-    _send(socket, (char*) line->next, lineLen);
+		aux = *(line->next);
+    line2NetworkByteOrder(&aux);
+    _send(socket, (char*) &aux, lineLen);
     line = line->next;
   }
 }
@@ -311,7 +313,6 @@ void server()
 
         case ADD_LINE:
           //add a new line on arp table
-          message = buffer;
           ip = ntohl(*(unsigned int*)message);
 					message += 4;
           int i = 0;
@@ -324,7 +325,6 @@ void server()
 
           Node *l = newLine(ip, mac, ttl);
           addLine(&arpTable, l, STATIC_ENTRY);
-          printf("adicionei\n");
           break;
         case SHOW_TABLE:
           newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);

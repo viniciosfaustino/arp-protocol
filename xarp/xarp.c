@@ -60,10 +60,11 @@ void showArpTable()
     n += _recv(socket, buffer+n, lineLen-n);
     if(n == lineLen)
     {
-      Node *newNode = (Node*) buffer;
-      newNode->ip = addr.sin_addr.s_addr = interface->ipAddress;
       // printInterface((MyInterface*) buffer);
-      printLine((Node*) buffer, count++);
+      Node *aux = (Node*) buffer;
+      aux->ipAddress = ntohl(aux->ipAddress);
+      aux->ttl = ntohs(aux->ttl);
+      printLine(aux, count++);
       printf("\n");
     }
   } while(n);
@@ -88,6 +89,7 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
   char message[messageLen];
   message[0] = ADD_LINE;
   memcpy(message+1, (char*)&ip, 4);
+  printf("Sent IP: %u\n", *((unsigned int*) (message+1)) );
   memcpy(message+1+4, (char*)&mac, 6);
   memcpy(message+1+4+6, (char*)&ttlSize, 2);
 
