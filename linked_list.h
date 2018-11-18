@@ -9,6 +9,7 @@ typedef struct lNode
   unsigned int ipAddress;
   unsigned char macAddress[6];
   short int ttl;
+  unsigned char type;
   struct lNode *next;
 } Node;
 

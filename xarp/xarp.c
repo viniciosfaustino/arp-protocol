@@ -1,10 +1,15 @@
-#include "definitions.h"
+#include "../definitions.h"
 #include "xarp.h"
-#include "communication.h"
+#include "../communication.h"
+#include "../linked_list.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h> // close function
 
 char getOperation(const char* c)
 {
@@ -16,15 +21,6 @@ char getOperation(const char* c)
 
   return __ERROR__;
 }
-
-// void showArpTable()
-// {
-//   int socket = _socket();
-//   char pckt;
-//   pckt = SHOW_TABLE;
-//   sendPacket(socket, LOOPBACK_IP, XARPD_PORT, pckt, 1);
-//
-// }
 
 void showArpTable()
 {
@@ -39,11 +35,11 @@ void showArpTable()
   close(socket);
 
   int lineLen = sizeof(Node);
-  char *buffer = (char*) malloc(Node);
+  char *buffer = (char*) malloc(lineLen);
   int n = 0;
   makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
-  do
   int count = 0;
+  do
   {
     if(n == lineLen) n = 0; // clean n for next interation
 
@@ -85,11 +81,46 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
 
   _send(socket, message, messageLen);
   close(socket);
+
+  return __OK__;
 }
 
 void setTTL(short int ttl)
 {
   //do something
+}
+
+int buildCommunicationWithXARP()
+{
+  // Builds the essential to communicate with xarpd
+  int socket;
+  struct sockaddr_in serv_addr;
+  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+  return socket;
+}
+
+char delEntry(const char *ipAddress)
+{
+  // Opcode ipAddress
+  unsigned char messageLen = 1 + 4;
+char message[messageLen];
+
+  message[0] = DEL_LINE;
+
+  unsigned int ip = inet_addr(ipAddress);
+  memcpy(message+1, (char*) &ip, 4);
+
+  int socket = buildCommunicationWithXARP();
+  _send(socket, message, messageLen);
+  close(socket);
+
+  return __OK__;
+}
+
+void resolveAddress(const char *ipAddress)
+{
+
 }
 
 // In the main will be implemented the parser

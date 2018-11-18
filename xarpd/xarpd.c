@@ -18,7 +18,7 @@
 #include "../definitions.h"
 #include "protocol_headers.h"
 #include "../communication.h"
-#include "linked_list.h"
+#include "../linked_list.h"
 
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
@@ -327,6 +327,10 @@ void server()
           break;
         case SHOW_TABLE:
           sendLines(newsockfd);
+
+				case DEL_LINE:
+
+					break;
 
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");
