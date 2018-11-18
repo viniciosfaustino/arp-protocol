@@ -231,6 +231,11 @@ void setTTL(short int ttl)
   //do something
 }
 
+void delLine(unsigned int ipAddress)
+{
+	removeLine(&arpTable, ipAddress);
+}
+
 void server()
 {
 	unsigned char BUFFERSIZE = 255;
@@ -309,7 +314,8 @@ void server()
           break;
 
 				case DEL_LINE:
-					
+					ip = ntohl(*(unsigned int*) message);
+					delLine(ip);
 					break;
 
 				default:
