@@ -284,7 +284,7 @@ void server()
 			printf("OPCODE: %d\n", opCode);
 			message = buffer + 1;
 			char ifName[MAX_IFNAME_LEN];
-      char mac[6];
+      unsigned char mac[6];
       unsigned int ip;
 			switch(opCode)
 			{
@@ -318,12 +318,13 @@ void server()
           int i = 0;
           for (i = 0; i < 6; i++)
           {
-            mac[i] = ntohl(*(int*)message);
-            message += 4;
+            mac[i] = ntohl(*(char*)message);
+            message += 1;
           }
           short int ttl = ntohl(*(short int*)message);
 
           Node *l = newLine(ip, mac, ttl);
+          printf("ttl: %d", ttl);
           addLine(&arpTable, l, STATIC_ENTRY);
           break;
         case SHOW_TABLE:

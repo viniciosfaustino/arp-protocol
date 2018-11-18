@@ -76,8 +76,10 @@ void showArpTable()
 
 char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
 {
+  printf("entry ttl: %s", ttl);
   unsigned int ip = inet_addr(ipAddr); // converts from dot notation into binary
   short int ttlSize = atoi(ttl);
+  printf("entry ttl: %d", ttlSize);
 
   unsigned int _mac[6];
   sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &_mac[0], &_mac[1], &_mac[2], &_mac[3], &_mac[4], &_mac[5]);
