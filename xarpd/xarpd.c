@@ -187,8 +187,6 @@ void sendIfaces(int socket)
 		iface2NetworkByteOrder(&aux);
 		_send(socket, (char*) &aux, myIfaceLen);
 	}
-
-	// _send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
 }
 
 unsigned char getIfaceIndex(const char *ifname)
@@ -309,6 +307,10 @@ void server()
           Node *l = newLine(ip, mac, ttl);
           addLine(&arpTable, l);
           break;
+
+				case DEL_LINE:
+					
+					break;
 
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");

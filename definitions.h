@@ -15,6 +15,12 @@
 #define LISTEN_ENQ 5 // listen queue size
 // -------------- End general macros -----------------
 
+
+// ----------- Types of arp table entries ------------
+#define DYNAMIC_ENTRY 0
+#define STATIC_ENTRY  1
+// --------- End types of arp table entries ----------
+
 // ---------- Inter program communication ------------
 
 // The protocol looks like that. The protocol has a
