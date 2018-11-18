@@ -1,6 +1,6 @@
-#include "definitions.h"
+#include "../definitions.h"
 #include "xarp.h"
-#include "communication.h"
+#include "../communication.h"
 
 #include <string.h>
 #include <stdio.h>
