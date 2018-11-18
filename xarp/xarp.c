@@ -10,6 +10,16 @@
 #include <arpa/inet.h>
 #include <unistd.h> // close function
 
+int buildCommunicationWithXARP()
+{
+  // Builds the essential to communicate with xarpd
+  int socket;
+  struct sockaddr_in serv_addr;
+  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+  return socket;
+}
+
 char getOperation(const char* c)
 {
   if(strcmp("show", c) == 0) return SHOW_TABLE;
@@ -34,8 +44,11 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
 {
   unsigned int ip = inet_addr(ipAddr); // converts from dot notation into binary
   short int ttlSize = atoi(ttl);
-  char mac[6];
-  sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+
+  unsigned int _mac[6];
+  sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &_mac[0], &_mac[1], &_mac[2], &_mac[3], &_mac[4], &_mac[5]);
+  unsigned char mac[6];
+  for(int i = 0; i < 6; i++) mac[i] = _mac[i];
 
   // Prepares info to send
   // opcode ifacenName ipAddress netmask
@@ -58,19 +71,21 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
   return __OK__;
 }
 
-void setTTL(short int ttl)
+char setTTL(short int ttl)
 {
-  //do something
-}
+  unsigned int ttlInNetworkByteorder = htons(ttl);
 
-int buildCommunicationWithXARP()
-{
-  // Builds the essential to communicate with xarpd
-  int socket;
-  struct sockaddr_in serv_addr;
-  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
-  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
-  return socket;
+  // opCode ttl
+  unsigned char messageLen = 1 + 2;
+  char message[messageLen];
+  message[0] = SET_TTL;
+  memcpy(message+1, (char*) &ttlInNetworkByteorder, 2);
+
+  int socket = buildCommunicationWithXARP();
+  _send(socket, message, messageLen);
+  close(socket);
+
+  return __OK__;
 }
 
 char delEntry(const char *ipAddress)

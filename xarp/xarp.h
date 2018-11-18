@@ -11,6 +11,6 @@ char addEntry(const char*, const char*, const char*);
 
 char delEntry(const char *);
 
-void setTTL(short int);
+char setTTL(short int);
 
 #endif
