@@ -215,6 +215,12 @@ void setTTL(short int ttl)
   //do something
 }
 
+void addLine(unsigned int ip, unsigned char* mac, short int ttl)
+{
+  Node* l = newLine(ip, mac, ttl);
+  addLine(&arpTable, l);
+}
+
 void server()
 {
 	unsigned char BUFFERSIZE = 255;
@@ -265,6 +271,23 @@ void server()
 					unsigned int mask = ntohl(*(unsigned int*)message);
 					configIface(ifName, ip, mask);
 					break;
+
+        case ADD_LINE:
+          //add a new line on arp table
+          message = buffer + 1;
+          unsigned int ip = ntohl(*(unsigned int*)message);
+					message += 4;
+          int i = 0;
+          char mac[6];
+          for (i = 0; i < 6; i++)
+          {
+            mac[i] = ntohl(*(int*)message);
+            message += 4;
+          }
+          short int ttl = ntohl(*(short int*)message)
+
+          addLine(ip, mac, ttl);
+
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");
 			}

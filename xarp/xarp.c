@@ -30,7 +30,7 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
 {
   unsigned int ip = inet_addr(ipAddr); // converts from dot notation into binary
   short int ttlSize = atoi(ttl);
-  int mac[6];
+  char mac[6];
   sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
   // Prepares info to send
