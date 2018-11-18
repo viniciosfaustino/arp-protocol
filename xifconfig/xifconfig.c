@@ -14,31 +14,6 @@
 #include "../definitions.h"
 #include "xifconfig.h"
 
-// void setInterface(const char* ipAddr, const char* ipNetmask, char* name)
-// {
-//   struct ifreq ifr;
-//   int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-//
-//   strncpy(ifr.ifr_name, name, IFNAMSIZ);
-//
-//   ifr.ifr_addr.sa_family = AF_INET;
-//
-//   inet_pton(AF_INET, ipAddr, ifr.ifr_addr.sa_data + 2);
-//   ioctl(fd, SIOCSIFADDR, &ifr);
-//
-//   inet_pton(AF_INET, ipNetmask, ifr.ifr_addr.sa_data + 2);
-//   ioctl(fd, SIOCSIFNETMASK, &ifr);
-//
-// }
-//
-// void setMTUSize(int mtu, const char* name)
-// {
-//   struct ifreq ifr;
-//   strncpy(ifr.ifr_name, name, IFNAMSIZ);
-//   ifr.ifr_mtu = mtu;
-//   int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-//   ioctl(fd, SIOCSIFMTU, &ifr);
-// }
 
 void printInterface(MyInterface *interface)
 {
@@ -63,12 +38,6 @@ void printInterface(MyInterface *interface)
   tx[0] = ntohl(tx[0]);
   tx[1] = ntohl(tx[1]);
   printf("TX bytes: %ld\n", *(unsigned long*)tx);
-}
-
-void makeNewSocketAndConnect(int *socket, struct sockaddr_in* serv_addr)
-{
-  *socket = _socket(AF_INET, SOCK_STREAM, 0);
-  _connect(*socket, serv_addr, sizeof(*serv_addr));
 }
 
 void listIfaces()
