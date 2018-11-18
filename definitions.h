@@ -35,7 +35,7 @@
 #define DEL_LINE      3
 #define SET_TTL       4
 #define LIST_IFCES    5
-#define UPDATE_IFACE  6
+#define CONFIG_IFACE  6
 
 // -------- End inter program communication ----------
 

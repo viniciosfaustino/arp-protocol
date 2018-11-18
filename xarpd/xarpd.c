@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include "../my_interface.h"
 #include "../definitions.h"
@@ -26,6 +27,7 @@
 
 // Global ugly variables
 MyInterface *my_ifaces;
+sem_t *ifaceMutexes;
 int numIfaces;
 
 // Print an Ethernet address
@@ -151,9 +153,58 @@ void loadIfces(int argc, char **argv)
 	}
 }
 
+void iface2NetworkByteOrder(MyInterface *iface)
+{
+	iface->sockfd = htonl(iface->sockfd);
+	iface->ttl = htons(iface->ttl);
+  iface->mtu = htons(iface->mtu);
+  iface->ipAddress = htonl(iface->ipAddress);
+  iface->broadcastAddress = htonl(iface->broadcastAddress);
+  iface->netMask = htonl(iface->netMask);
+  iface->rxPackets = htonl(iface->rxPackets);
+  iface->txPackets = htonl(iface->txPackets);
+
+	int *rx = (int*) &(iface->rxBytes);
+	rx[0] = htonl(rx[0]);
+	rx[1] = htonl(rx[1]);
+
+	int *tx = (int*) &(iface->txBytes);
+	tx[0] = htonl(tx[0]);
+	tx[1] = htonl(tx[1]);
+}
+
 void sendIfaces(int socket)
 {
-	_send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
+	MyInterface aux;
+	unsigned int myIfaceLen = sizeof(MyInterface);
+	for(int i = 0; i < numIfaces; i++)
+	{
+		aux = my_ifaces[i];
+		//converts ifaces atributes to network byte order
+		iface2NetworkByteOrder(&aux);
+		_send(socket, (char*) &aux, myIfaceLen);
+	}
+
+	// _send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
+}
+
+void configIface(const char *ifname, unsigned int ip, unsigned int mask)
+{
+	int i;
+	for(i = 0; i < numIfaces; i++)
+	{
+		// paglijonson style
+		if(strcmp(my_ifaces[i].name, ifname) == 0) break;
+	}
+
+	if(i < numIfaces) // iface found
+	{
+		sem_wait(&ifaceMutexes[i]);
+		my_ifaces[i].ipAddress = ip;
+		my_ifaces[i].netMask = mask;
+		sem_post(&ifaceMutexes[i]);
+	}
+
 }
 
 void server()
@@ -169,6 +220,7 @@ void server()
 	_listen(sockfd, LISTEN_ENQ);
 	int n, k, newsockfd;
 	char opCode;
+	char *message; // aux to message decoding
 	printf("SERVER THREAD IS RUNNING\n");
 	while(1)
 	{
@@ -193,13 +245,34 @@ void server()
 					sendIfaces(newsockfd);
 					printf("IFACES SENT\n");
 					break;
+				case CONFIG_IFACE:
+					// message decode
+					message = buffer + 1;
+					char ifName[MAX_IFNAME_LEN];
+					strcpy(ifName, message);
+					unsigned char nameLen = strlen(ifName);
+					message += nameLen+1;
+					unsigned int ip = ntohl(*(unsigned int*)message);
+					message += 4;
+					unsigned int mask = ntohl(*(unsigned int*)message);
+					configIface(ifName, ip, mask);
+					break;
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");
 			}
+			close(newsockfd);
 		}
-		close(newsockfd);
 	}
 
+}
+
+void initMutexes(int numSem)
+{
+	ifaceMutexes = (sem_t*) malloc(numSem * sizeof(sem_t));
+	for(int i = 0; i < numSem; i++)
+	{
+		sem_init(&ifaceMutexes[i], 0, 1); // mutex compartilhado por todas as threads
+	}
 }
 
 // main function
@@ -216,6 +289,7 @@ int main(int argc, char** argv)
 	my_ifaces = (MyInterface*) malloc(numIfaces * sizeof(MyInterface));
 	memset(my_ifaces, 0, numIfaces * sizeof(MyInterface));
 
+	initMutexes(argc-1);
 	loadIfces(argc, argv);
 
 	// This thread will be responsible for answer xarp and xifconfig demands
