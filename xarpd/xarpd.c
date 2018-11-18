@@ -32,7 +32,6 @@ sem_t *ifaceMutexes;
 int numIfaces;
 
 Node arpTable;
-
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
 {
@@ -204,6 +203,7 @@ void sendLines(int socket)
   {
     line2NetworkByteOrder(line->next);
     _send(socket, (char*) line->next, lineLen);
+    line = line->next;
   }
 }
 
@@ -323,10 +323,13 @@ void server()
           short int ttl = ntohl(*(short int*)message);
 
           Node *l = newLine(ip, mac, ttl);
-          addLine(&arpTable, l);
+          addLine(&arpTable, l, STATIC_ENTRY);
+          printf("adicionei\n");
           break;
         case SHOW_TABLE:
+          newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);
           sendLines(newsockfd);
+          break;
 
 				case DEL_LINE:
 

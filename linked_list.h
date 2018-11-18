@@ -13,7 +13,7 @@ typedef struct lNode
   struct lNode *next;
 } Node;
 
-char addLine(Node*, Node*);
+char addLine(Node*, Node*, unsigned char);
 
 char removeLine(Node*, unsigned int);
 

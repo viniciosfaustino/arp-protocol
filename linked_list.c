@@ -1,13 +1,13 @@
-#include "../definitions.h"
+#include "definitions.h"
 #include "linked_list.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-char addLine(Node *table, Node *line)
+char addLine(Node *table, Node *line, unsigned char type)
 {
   if(table == NULL) return __ERROR__;
-
+  line->type = type;
   line->next = table->next;
   table->next = line;
 

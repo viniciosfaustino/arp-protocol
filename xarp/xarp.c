@@ -22,6 +22,20 @@ char getOperation(const char* c)
   return __ERROR__;
 }
 
+// void node2HostByteOrder()
+// {
+//   printf("%s\t", interface->name);
+//   printf("Endereco de HW %2X:%2X:%2X:%2X:%2X:%2X \n", interface->macAddress[0], interface->macAddress[1], interface->macAddress[2], interface->macAddress[3], interface->macAddress[4], interface->macAddress[5]);
+//   printf("inet end.: %s\t",inet_ntoa(addr.sin_addr));
+//   addr.sin_addr.s_addr = interface->broadcastAddress;
+//   printf("Bcast: %s\t",inet_ntoa(addr.sin_addr));
+//   addr.sin_addr.s_addr = interface->netMask;
+//   printf("Masc: %s\n",inet_ntoa(addr.sin_addr));
+//   printf("UP MTU: %d\n", ntohs(interface->mtu));
+//   printf("RX packets: %d\t", ntohl(interface->rxPackets));
+//   printf("TX packets: %d\n", ntohl(interface->txPackets));
+// }
+
 void showArpTable()
 {
   // Builds the essential to communicate with xarpd
@@ -39,13 +53,15 @@ void showArpTable()
   int n = 0;
   makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
   int count = 0;
+  printf("  Entrada  |   Endereço IP   | Endereço Ethernet | TTL\n");
   do
   {
     if(n == lineLen) n = 0; // clean n for next interation
-
     n += _recv(socket, buffer+n, lineLen-n);
     if(n == lineLen)
     {
+      Node *newNode = (Node*) buffer;
+      newNode->ip = addr.sin_addr.s_addr = interface->ipAddress;
       // printInterface((MyInterface*) buffer);
       printLine((Node*) buffer, count++);
       printf("\n");
@@ -61,11 +77,13 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
 {
   unsigned int ip = inet_addr(ipAddr); // converts from dot notation into binary
   short int ttlSize = atoi(ttl);
-  char mac[6];
-  sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+
+  unsigned int _mac[6];
+  sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &_mac[0], &_mac[1], &_mac[2], &_mac[3], &_mac[4], &_mac[5]);
+  unsigned char mac[6];
+  for(int i = 0; i < 6; i++) mac[i] = _mac[i];
 
   // Prepares info to send
-  // opcode ifacenName ipAddress netmask
   unsigned char messageLen = 13;
   char message[messageLen];
   message[0] = ADD_LINE;
@@ -154,7 +172,7 @@ int main(int argc, char *argv[])
       resolveAddress(argv[2]);
       break;
     case ADD_LINE:
-      if(argc == 5)
+      if(argc != 5)
       {
         // print error
         exit(1);
