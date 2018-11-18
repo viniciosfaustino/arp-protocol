@@ -1,31 +1,38 @@
-#include "../definitions.h"
+#include "definitions.h"
 #include "linked_list.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <semaphore.h>
 
-char addLine(Node *table, Node *line)
+char addLine(Node *table, Node *line, unsigned char type)
 {
+  sem_wait(&(table->semaphore));
   if(table == NULL) return __ERROR__;
-
+  line->type = type;
   line->next = table->next;
   table->next = line;
-
+  sem_post(&(table->semaphore));
   return __OK__;
 }
 
 char removeLine(Node *table, unsigned int ipAddress)
 {
+  // The table is blocked when a deletion is done
   Node *prev;
+  sem_wait(&(table->semaphore));
   prev = searchLine(table, ipAddress);
+
   if(prev != NULL)
   {
     Node *n = prev->next;
+
     prev->next = n->next;
     free(n);
+    sem_post(&(table->semaphore));
     return __OK__;
   }
-
+  sem_post(&(table->semaphore));
   return __ERROR__;
 }
 
@@ -36,6 +43,7 @@ Node* searchLine(Node *table, unsigned int ipAddress)
   {
     if((n->next)->ipAddress == ipAddress)
       return n;
+    n = n->next;
   }
   return NULL;
 }
@@ -81,6 +89,7 @@ Node* newLine(unsigned int ipAddress, unsigned char *macAddress, short int ttl)
   node->ttl = ttl;
   node->next = NULL;
 
+  sem_init(&(node->semaphore), 0, 1);
   return node;
 }
 

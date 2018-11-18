@@ -2,6 +2,7 @@
 
 #define __LINKED_LIST__
 
+#include <semaphore.h>
 
 // Node of the linked list where the ARP table will be stored
 typedef struct lNode
@@ -10,10 +11,11 @@ typedef struct lNode
   unsigned char macAddress[6];
   short int ttl;
   unsigned char type;
+  sem_t semaphore;
   struct lNode *next;
 } Node;
 
-char addLine(Node*, Node*);
+char addLine(Node*, Node*, unsigned char);
 
 char removeLine(Node*, unsigned int);
 

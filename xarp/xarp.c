@@ -1,6 +1,7 @@
 #include "../definitions.h"
 #include "xarp.h"
 #include "../communication.h"
+#include "../linked_list.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -33,17 +34,46 @@ char getOperation(const char* c)
 
 void showArpTable()
 {
-  // int socket = _socket();
-  // char requestPacket[13];
-  // requestPacket[0] = SHOW_TABLE;
-  // sendPacket(socket, LOOPBACK_IP, XARPD_PORT, requestPacket, 13);
+  // Builds the essential to communicate with xarpd
+  int socket;
+  struct sockaddr_in serv_addr;
+  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+
+  char request = SHOW_TABLE;
+  _send(socket, &request, 1);
+  close(socket);
+
+  int lineLen = sizeof(Node);
+  char *buffer = (char*) malloc(lineLen);
+  int n = 0;
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+  int count = 0;
+  printf("  Entrada  |   Endereço IP   | Endereço Ethernet | TTL\n");
+  do
+  {
+    if(n == lineLen) n = 0; // clean n for next interation
+    n += _recv(socket, buffer+n, lineLen-n);
+    if(n == lineLen)
+    {
+      // printInterface((MyInterface*) buffer);
+      Node *aux = (Node*) buffer;
+      aux->ipAddress = ntohl(aux->ipAddress);
+      aux->ttl = ntohs(aux->ttl);
+      printLine(aux, count++);
+      printf("\n");
+    }
+  } while(n);
+
+  free(buffer);
+  close(socket);
 
 }
 
 char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
 {
   unsigned int ip = inet_addr(ipAddr); // converts from dot notation into binary
-  short int ttlSize = atoi(ttl);
+  short int ttlSize = htons(atoi(ttl));
 
   unsigned int _mac[6];
   sscanf(macAddress, "%x:%x:%x:%x:%x:%x", &_mac[0], &_mac[1], &_mac[2], &_mac[3], &_mac[4], &_mac[5]);
@@ -51,7 +81,6 @@ char addEntry(const char* ipAddr, const char* macAddress, const char* ttl)
   for(int i = 0; i < 6; i++) mac[i] = _mac[i];
 
   // Prepares info to send
-  // opcode ifacenName ipAddress netmask
   unsigned char messageLen = 13;
   char message[messageLen];
   message[0] = ADD_LINE;
@@ -142,7 +171,7 @@ int main(int argc, char *argv[])
       resolveAddress(argv[2]);
       break;
     case ADD_LINE:
-      if(argc == 5)
+      if(argc != 5)
       {
         // print error
         exit(1);

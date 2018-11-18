@@ -18,7 +18,7 @@
 #include "../definitions.h"
 #include "protocol_headers.h"
 #include "../communication.h"
-#include "linked_list.h"
+#include "../linked_list.h"
 
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
@@ -32,7 +32,6 @@ sem_t *ifaceMutexes;
 int numIfaces;
 
 Node arpTable;
-
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
 {
@@ -176,6 +175,12 @@ void iface2NetworkByteOrder(MyInterface *iface)
 	tx[1] = htonl(tx[1]);
 }
 
+void line2NetworkByteOrder(Node *line)
+{
+  line->ipAddress = htonl(line->ipAddress);
+  line->ttl = htons(line->ttl);
+}
+
 void sendIfaces(int socket)
 {
 	MyInterface aux;
@@ -187,6 +192,21 @@ void sendIfaces(int socket)
 		iface2NetworkByteOrder(&aux);
 		_send(socket, (char*) &aux, myIfaceLen);
 	}
+
+}
+
+void sendLines(int socket)
+{
+  Node *line = &arpTable;
+	Node aux;
+  unsigned int lineLen = sizeof(Node);
+  while (line->next != NULL)
+  {
+		aux = *(line->next);
+    line2NetworkByteOrder(&aux);
+    _send(socket, (char*) &aux, lineLen);
+    line = line->next;
+  }
 }
 
 unsigned char getIfaceIndex(const char *ifname)
@@ -269,7 +289,6 @@ void server()
 			printf("OPCODE: %d\n", opCode);
 			message = buffer + 1;
 			char ifName[MAX_IFNAME_LEN];
-      char mac[6];
       unsigned int ip;
 			switch(opCode)
 			{
@@ -298,19 +317,16 @@ void server()
 
         case ADD_LINE:
           //add a new line on arp table
-          message = buffer + 1;
           ip = ntohl(*(unsigned int*)message);
-					message += 4;
-          int i = 0;
-          for (i = 0; i < 6; i++)
-          {
-            mac[i] = ntohl(*(int*)message);
-            message += 4;
-          }
-          short int ttl = ntohl(*(short int*)message);
+          message += 4 + 6;
+          short int ttl = ntohs(*(short int*)message);
 
-          Node *l = newLine(ip, mac, ttl);
-          addLine(&arpTable, l);
+          Node *l = newLine(ip, message - 6, ttl);
+          addLine(&arpTable, l, STATIC_ENTRY);
+          break;
+        case SHOW_TABLE:
+          newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);
+          sendLines(newsockfd);
           break;
 
 				case DEL_LINE:
@@ -339,6 +355,8 @@ void initMutexes(int numSem)
 // main function
 int main(int argc, char** argv)
 {
+	arpTable.next = NULL;
+	sem_init(&(arpTable.semaphore), 0, 1);
 	int i;
 
 	if (argc < 2)
