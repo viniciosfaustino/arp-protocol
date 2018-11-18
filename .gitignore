@@ -1,4 +1,4 @@
-.out
-.o
-xarpd
-xifconfig
+*.o
+xarpd/xarpd
+xifconfig/xifconfig
+xarp/xarp

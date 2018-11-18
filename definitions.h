@@ -36,6 +36,7 @@
 #define SET_TTL       4
 #define LIST_IFCES    5
 #define CONFIG_IFACE  6
+#define SET_IFACE_MTU 7
 
 // -------- End inter program communication ----------
 

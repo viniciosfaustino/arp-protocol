@@ -18,6 +18,7 @@
 #include "../definitions.h"
 #include "protocol_headers.h"
 #include "../communication.h"
+#include "linked_list.h"
 
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
@@ -31,7 +32,6 @@ sem_t *ifaceMutexes;
 int numIfaces;
 
 Node arpTable;
-arpTable->next = NULL;
 
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
@@ -182,7 +182,7 @@ void sendIfaces(int socket)
 	unsigned int myIfaceLen = sizeof(MyInterface);
 	for(int i = 0; i < numIfaces; i++)
 	{
-		aux = my_ifaces[i];
+		aux = my_ifaces[i]; // a shallow copy is enough
 		//converts ifaces atributes to network byte order
 		iface2NetworkByteOrder(&aux);
 		_send(socket, (char*) &aux, myIfaceLen);
@@ -191,14 +191,20 @@ void sendIfaces(int socket)
 	// _send(socket, (char*) my_ifaces, numIfaces * sizeof(MyInterface));
 }
 
-void configIface(const char *ifname, unsigned int ip, unsigned int mask)
+unsigned char getIfaceIndex(const char *ifname)
 {
-	int i;
+	unsigned char i;
 	for(i = 0; i < numIfaces; i++)
 	{
 		// paglijonson style
 		if(strcmp(my_ifaces[i].name, ifname) == 0) break;
 	}
+	return i;
+}
+
+void configIface(const char *ifname, unsigned int ip, unsigned int mask)
+{
+	unsigned char i = getIfaceIndex(ifname);
 
 	if(i < numIfaces) // iface found
 	{
@@ -207,18 +213,24 @@ void configIface(const char *ifname, unsigned int ip, unsigned int mask)
 		my_ifaces[i].netMask = mask;
 		sem_post(&ifaceMutexes[i]);
 	}
+}
 
+void setMTUSize(const char *ifname, unsigned short mtu)
+{
+	unsigned char i = getIfaceIndex(ifname);
+
+	if(i < numIfaces)
+	{
+		printf("%s: %u\n", ifname, mtu);
+		sem_wait(&ifaceMutexes[i]);
+		my_ifaces[i].mtu = mtu;
+		sem_post(&ifaceMutexes[i]);
+	}
 }
 
 void setTTL(short int ttl)
 {
   //do something
-}
-
-void addLine(unsigned int ip, unsigned char* mac, short int ttl)
-{
-  Node* l = newLine(ip, mac, ttl);
-  addLine(&arpTable, l);
 }
 
 void server()
@@ -252,6 +264,10 @@ void server()
 		{
 			opCode = buffer[0];
 			printf("OPCODE: %d\n", opCode);
+			message = buffer + 1;
+			char ifName[MAX_IFNAME_LEN];
+      char mac[6];
+      unsigned int ip;
 			switch(opCode)
 			{
 				case LIST_IFCES:
@@ -261,32 +277,38 @@ void server()
 					break;
 				case CONFIG_IFACE:
 					// message decode
-					message = buffer + 1;
-					char ifName[MAX_IFNAME_LEN];
 					strcpy(ifName, message);
 					unsigned char nameLen = strlen(ifName);
 					message += nameLen+1;
-					unsigned int ip = ntohl(*(unsigned int*)message);
+					ip = ntohl(*(unsigned int*)message);
 					message += 4;
 					unsigned int mask = ntohl(*(unsigned int*)message);
 					configIface(ifName, ip, mask);
+					break;
+        case SET_IFACE_MTU:
+					// message decode
+					strcpy(ifName, message);
+					unsigned char ifaceNameLen = strlen(ifName);
+					unsigned short mtuSize = ntohs(* (unsigned short*)(message+ifaceNameLen+1));
+					setMTUSize(ifName, mtuSize);
 					break;
 
         case ADD_LINE:
           //add a new line on arp table
           message = buffer + 1;
-          unsigned int ip = ntohl(*(unsigned int*)message);
+          ip = ntohl(*(unsigned int*)message);
 					message += 4;
           int i = 0;
-          char mac[6];
           for (i = 0; i < 6; i++)
           {
             mac[i] = ntohl(*(int*)message);
             message += 4;
           }
-          short int ttl = ntohl(*(short int*)message)
+          short int ttl = ntohl(*(short int*)message);
 
-          addLine(ip, mac, ttl);
+          Node *l = newLine(ip, mac, ttl);
+          addLine(&arpTable, l);
+          break;
 
 				default:
 					printf("OPERATION NOT SUPPORTED BY XARPD\n");

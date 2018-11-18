@@ -76,6 +76,7 @@ void configIface(const char *ifaceName, const char *ipAddress, const char *netma
 {
   unsigned int ip = inet_addr(ipAddress); // converts from dot notation into binary
   unsigned int mask = inet_addr(netmask); // in network byte order!
+
   unsigned char ifaceNameLen = strlen(ifaceName);
 
   // Prepares info to send
@@ -97,22 +98,39 @@ void configIface(const char *ifaceName, const char *ipAddress, const char *netma
   close(socket);
 }
 
+void setMTUSize(const char* name, unsigned short mtu)
+{
+  unsigned char ifaceNameLen = strlen(name);
+  // OPCODE ifaceName \0 mtu size
+  unsigned char messageLen = 1 + ifaceNameLen+1 + 2;
+
+  char message[messageLen];
+
+  // building the message
+  message[0] = SET_IFACE_MTU;
+  strcpy(message+1, name);
+  unsigned short mtuInNetworkByteOrder = htons(mtu);
+  memcpy(message+1+ifaceNameLen+1, (char*) &mtuInNetworkByteOrder, 2);
+
+  // Builds the essential to communicate with xarpd
+  int socket;
+  struct sockaddr_in serv_addr;
+  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
+  makeNewSocketAndConnect(&socket, (struct sockaddr_in*) &serv_addr);
+
+  _send(socket, message, messageLen);
+  close(socket);
+}
+
 int main(int argc, char const *argv[])
 {
   if (argc == 1)
   {
     listIfaces();
   }
-  else if(strcmp(argv[2], "mtu") == 0)
+  else if(argc == 3)
   {
-    if (argc == 4)
-    {
-      int size = atoi(argv[3]);
-      // setMTUSize(size, argv[1]);
-    }else
-    {
-      // setMTUSize(1500, argv[1]);
-    }
+    setMTUSize(argv[1], (unsigned short) atoi(argv[2]));
   }
   else
   {

@@ -103,3 +103,9 @@ void sendPacket(int socket, const char *ipAddress, int port, char* packet, unsig
     _connect(socket, &serv_addr, sizeof(serv_addr));
     _send(socket, packet, packetSize);
 }
+
+void makeNewSocketAndConnect(int *socket, struct sockaddr_in* serv_addr)
+{
+  *socket = _socket(AF_INET, SOCK_STREAM, 0);
+  _connect(*socket, serv_addr, sizeof(*serv_addr));
+}
