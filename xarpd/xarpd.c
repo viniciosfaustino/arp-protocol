@@ -346,6 +346,27 @@ void server()
 
 }
 
+void decrementer()
+{
+  Node *line;
+	Node aux;
+  while(1){
+    sleep(1);
+    line = &arpTable;
+    while (line->next != NULL)
+    {
+      if ((line->next)->ttl-- == 0 || (line->next)->ttl == 0)
+      {
+        removeLine(&arpTable,(line->next)->ipAddress);
+      }
+      if (line->next != NULL)
+      {
+        line = line->next;
+      }
+    }
+  }
+}
+
 void initMutexes(int numSem)
 {
 	ifaceMutexes = (sem_t*) malloc(numSem * sizeof(sem_t));
@@ -366,6 +387,7 @@ int main(int argc, char** argv)
 		print_usage();
 
   pthread_t tid[argc];
+  pthread_t ttlDecrementer;
 
 	numIfaces = argc-1;
 	my_ifaces = (MyInterface*) malloc(numIfaces * sizeof(MyInterface));
@@ -376,6 +398,8 @@ int main(int argc, char** argv)
 
 	// This thread will be responsible for answer xarp and xifconfig demands
 	pthread_create(&tid[argc - 1], NULL, (void*) server, NULL);
+
+  pthread_create(&ttlDecrementer, NULL, (void*) decrementer, NULL);
 
 	for (i = 0; i < argc-1; i++)
 	{
@@ -391,6 +415,8 @@ int main(int argc, char** argv)
   }
 
 	pthread_join(tid[argc-1], NULL);
+
+  pthread_join(ttlDecrementer, NULL);
 
 	// The rest of the code is to respond the requests from xarpd and xifconfig
 	return 0;
