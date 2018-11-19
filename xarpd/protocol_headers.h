@@ -13,15 +13,15 @@ struct ether_hdr
 // Read RFC 826 to define the ARP struct
 struct arp_hdr
 {
-  unsigned short arp_hd;
-  unsigned short arp_pr;
-  unsigned char arp_hdl;
-  unsigned char arp_prl;
-  unsigned short arp_op;
-  unsigned char arp_sha[6];
-  unsigned char arp_spa[4];
-  unsigned char arp_dha[6];
-  unsigned char arp_dpa[4];
+  unsigned short arp_hd; // hardware type
+  unsigned short arp_pr; // protocol type
+  unsigned char arp_hdl; // hardware address len
+  unsigned char arp_prl; // protocol address len
+  unsigned short arp_op; // opcode
+  unsigned char arp_sha[6]; // sender hardware address
+  unsigned int arp_spa; // sender protocol address
+  unsigned char arp_dha[6]; // destination hardware address
+  unsigned int arp_dpa; // destination protocol address
 };
 
 struct ip_hdr

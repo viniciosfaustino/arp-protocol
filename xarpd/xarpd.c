@@ -19,6 +19,7 @@
 #include "protocol_headers.h"
 #include "../communication.h"
 #include "../linked_list.h"
+#include "arp_protocol.h"
 
 #define MAX_PACKET_SIZE 65536
 #define MIN_PACKET_SIZE 64
@@ -32,6 +33,7 @@ sem_t *ifaceMutexes;
 int numIfaces;
 
 Node arpTable;
+
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
 {
@@ -267,6 +269,7 @@ void server()
   int sockfd = _socket(AF_INET, SOCK_STREAM, 0);
 	_bind(&sockfd, (struct sockaddr*) &serv_addr);
 	_listen(sockfd, LISTEN_ENQ);
+
 	int n, k, newsockfd;
 	char opCode;
 	char *message; // aux to message decoding

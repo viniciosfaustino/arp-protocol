@@ -21,6 +21,18 @@
 #define STATIC_ENTRY  1
 // --------- End types of arp table entries ----------
 
+
+// ------------------ ARP protocol -------------------
+#define ARP_ETHERTYPE     0x0806
+
+#define ARP_HW_TYPE       0x0001
+#define ARP_PROTOTYPE     0x0800 // IP
+#define HW_ADDR_LEN       0x06 // 6 bytes
+#define PROTOCOL_ADDR_LEN 0x04 // 4 bytes
+#define ARP_REQUEST       0x01
+#define ARP_RESPONSE      0x02
+// ---------------- End ARP protocol ------------------
+
 // ---------- Inter program communication ------------
 
 // The protocol looks like that. The protocol has a

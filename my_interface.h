@@ -8,7 +8,7 @@ typedef struct
   int		sockfd;
 	short		ttl;
   unsigned short mtu;
-  unsigned char name[MAX_IFNAME_LEN];
+  char name[MAX_IFNAME_LEN];
   unsigned char macAddress[6];
   unsigned int ipAddress;
   unsigned int broadcastAddress;
