@@ -121,7 +121,7 @@ char delEntry(const char *ipAddress)
 {
   // Opcode ipAddress
   unsigned char messageLen = 1 + 4;
-char message[messageLen];
+  char message[messageLen];
 
   message[0] = DEL_LINE;
 
@@ -137,7 +137,40 @@ char message[messageLen];
 
 void resolveAddress(const char *ipAddress)
 {
+  // Opcode ipaddress
+  unsigned char messageLen = 1 + 4;
+  char message[messageLen];
+  unsigned int ip = inet_addr(ipAddress);
 
+  message[0] = RES_IP;
+  memcpy(message+1, (char*) &ip, 4);
+
+  int socket = buildCommunicationWithXARP();
+  _send(socket, message, messageLen);
+  close(socket);
+
+  // status // mac
+  unsigned char bufferSize = 1 + 6;
+  char buffer[bufferSize]; // buffer to store the xarpd response
+  socket = buildCommunicationWithXARP();
+
+  int n = 0;
+  do
+  {
+    _recv(socket, buffer+n, bufferSize-n);
+  } while(n != bufferSize);
+  close(socket);
+
+  char status = buffer[0];
+  if(status == __ERROR__)
+  {
+    printf("RES FAILED");
+  }
+  else
+  {
+    unsigned char *mac = (unsigned char*) (buffer+1);
+    printf("%s -> %X:%X:%X:%X:%X%X\n", ipAddress, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  }
 }
 
 // In the main will be implemented the parser

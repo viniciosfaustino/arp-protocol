@@ -258,6 +258,42 @@ void delLine(unsigned int ipAddress)
 	removeLine(&arpTable, ipAddress);
 }
 
+void resolveIP(unsigned int ip)
+{
+	// first thing is to look for the ip at the arp table
+	sem_wait(&arpTable.semaphore);
+	Node *line = searchLine(&arpTable, ip)
+	sem_post(&arpTable.semaphore);
+
+	if(line == NULL) // line not found
+	{
+		// searchs the ie in the same network of the requested ip address
+		unsigned char i;
+		unsigned int ifaceIP, ifaceNetmask;
+		unsigned char *ifaceMAC;
+		for(i = 0; i < numIfaces; i++)
+		{
+			sem_wait(&ifaceMutexes[i]);
+			ifaceIP = my_ifaces[i].ipAddress;
+			ifaceNetmask = my_ifaces[i].netMask;
+			ifaceMAC = my_ifaces[i].macAddress;
+			sem_post(&ifaceMutexes[i]);
+
+			if((ifaceIP & ifaceNetmask) == (ip & ifaceNetmask)) break;
+		}
+
+		if(i < numIfaces) // ie some iface's network matches with ip resquested network
+		{
+			char *request = buildArpRequest(ifaceIP, ifaceMAC, ip);
+			sendArpRequest(request, &my_ifaces[i]);
+			free(request);
+
+			// waits for an answer
+			// locks the interface for receiving packets
+		}
+	}
+}
+
 void server()
 {
 	unsigned char BUFFERSIZE = 255;
@@ -265,7 +301,7 @@ void server()
 
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
-  loadSocketInfo(&serv_addr, "0.0.0.0", XARPD_PORT);
+  loadSocketInfo(&serv_addr, LOOPBACK_IP, XARPD_PORT);
   int sockfd = _socket(AF_INET, SOCK_STREAM, 0);
 	_bind(&sockfd, (struct sockaddr*) &serv_addr);
 	_listen(sockfd, LISTEN_ENQ);
@@ -335,6 +371,11 @@ void server()
 				case DEL_LINE:
 					ip = ntohl(*(unsigned int*) message);
 					delLine(ip);
+					break;
+
+				case RES_IP:
+					ip = ntohl(*(unsigned int*) message);
+					resolveIP(ip);
 					break;
 
 				default:

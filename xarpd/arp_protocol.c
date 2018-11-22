@@ -15,6 +15,19 @@
 
 char* buildArpRequest(unsigned int myIP, unsigned char *myMAC, unsigned int dstIP)
 {
+  unsigned char dstMAC[6] = {0};
+  return buildArpPacket(myIP, myMAC, dstIP, dstMAC, ARP_REQUEST);
+}
+
+char* buildArpReply(unsigned int myIP, unsigned char *myMAC, unsigned int dstIP, unsigned char *dstMAC)
+{
+  return buildArpPacket(myIP, myMAC, dstIP, dstMAC, ARP_RESPONSE);
+}
+
+char *buildArpPacket(unsigned int myIP, unsigned char *myMAC,
+                     unsigned int dstIP, unsigned char *dstMAC,
+                     unsigned short type)
+{
   int arpHeaderLen, ethHeaderLen;
   arpHeaderLen = sizeof(struct arp_hdr);
   ethHeaderLen = sizeof(struct ether_hdr);
@@ -22,7 +35,16 @@ char* buildArpRequest(unsigned int myIP, unsigned char *myMAC, unsigned int dstI
   char *packet = (char*) malloc(arpHeaderLen + ethHeaderLen);
 
   struct ether_hdr *eth = (struct ether_hdr*) packet;
-  memset(eth->ether_dhost, 0xFF, 6); // broadcast mac address
+
+  if(type == ARP_REQUEST)
+  {
+    memset(eth->ether_dhost, 0xFF, 6); // broadcast mac address
+  }
+  else
+  {
+    memcpy(eth->ether_dhost, dstMAC, 6); // broadcast mac address
+  }
+
   memcpy(eth->ether_shost, myMAC, 6);
   eth->ether_type = htons(ARP_ETHERTYPE);
 
@@ -31,11 +53,12 @@ char* buildArpRequest(unsigned int myIP, unsigned char *myMAC, unsigned int dstI
   arp_req->arp_pr = htons(ARP_PROTOTYPE);
   arp_req->arp_hdl = HW_ADDR_LEN;
   arp_req->arp_op = PROTOCOL_ADDR_LEN;
-  arp_req->arp_op = ARP_REQUEST;
+  arp_req->arp_op = htons(type);
   // copy source mac ie myMAC
   memcpy(arp_req->arp_sha, myMAC, 6);
   arp_req->arp_spa = htonl(myIP);
-  memset(arp_req->arp_dha, 0, 6);
+
+  memcpy(arp_req->arp_dha, dstMAC, 6);
   arp_req->arp_dpa = htonl(dstIP);
 
   return packet;

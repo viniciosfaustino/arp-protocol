@@ -5,6 +5,8 @@
 
 
 char* buildArpRequest(unsigned int, unsigned char*, unsigned int);
+char* buildArpReply(unsigned int, unsigned char*, unsigned int, unsigned char*);
+char *buildArpPacket(unsigned int, unsigned char*, unsigned int, unsigned char*, unsigned short);
 int sendArpRequest(char*, MyInterface*);
 
 #endif
