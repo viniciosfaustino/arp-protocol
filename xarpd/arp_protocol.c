@@ -21,7 +21,7 @@ char* buildArpRequest(unsigned int myIP, unsigned char *myMAC, unsigned int dstI
 
 char* buildArpReply(unsigned int myIP, unsigned char *myMAC, unsigned int dstIP, unsigned char *dstMAC)
 {
-  return buildArpPacket(myIP, myMAC, dstIP, dstMAC, ARP_RESPONSE);
+  return buildArpPacket(myIP, myMAC, dstIP, dstMAC, ARP_REPLY);
 }
 
 char *buildArpPacket(unsigned int myIP, unsigned char *myMAC,
@@ -64,7 +64,7 @@ char *buildArpPacket(unsigned int myIP, unsigned char *myMAC,
   return packet;
 }
 
-int sendArpRequest(char *requestPacket, MyInterface *iface)
+int sendArpPacket(char *packet, MyInterface *iface)
 {
   struct sockaddr_ll device;
   memset(&device, 0, sizeof(struct sockaddr_ll)); // just for safety
@@ -80,13 +80,13 @@ int sendArpRequest(char *requestPacket, MyInterface *iface)
   memcpy(device.sll_addr, iface->macAddress, HW_ADDR_LEN);
   device.sll_halen = HW_ADDR_LEN;
 
-  // Instantiating a socket to send the request
+  // Instantiating a socket to send the packet
   int socket = _socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 
-  // Sends the request packet
+  // Sends the packet
   int packetLen = sizeof(struct arp_hdr) + sizeof(struct ether_hdr);
 
-  int bytes = sendto(socket, requestPacket, packetLen, 0, (struct sockaddr*) &device, sizeof(struct sockaddr_ll));
+  int bytes = sendto(socket, packet, packetLen, 0, (struct sockaddr*) &device, sizeof(struct sockaddr_ll));
   close(socket);
 
   if(bytes <= 0) exit(1);

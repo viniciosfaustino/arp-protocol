@@ -149,27 +149,28 @@ void resolveAddress(const char *ipAddress)
   _send(socket, message, messageLen);
   close(socket);
 
-  // status // mac
-  unsigned char bufferSize = 1 + 6;
+  // status // mac // ttl
+  unsigned char bufferSize = 1 + 6 + 2;
   char buffer[bufferSize]; // buffer to store the xarpd response
   socket = buildCommunicationWithXARP();
 
   int n = 0;
   do
   {
-    _recv(socket, buffer+n, bufferSize-n);
+    n += _recv(socket, buffer+n, bufferSize-n);
   } while(n != bufferSize);
   close(socket);
 
   char status = buffer[0];
   if(status == __ERROR__)
   {
-    printf("RES FAILED");
+    printf("ADRESS NOT FOUND\n");
   }
   else
   {
     unsigned char *mac = (unsigned char*) (buffer+1);
-    printf("%s -> %X:%X:%X:%X:%X%X\n", ipAddress, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    short int ttl = ntohs(*(short int*) (mac+6));
+    printf("(%s, %X:%X:%X:%X:%X%X, %d)\n", ipAddress, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], ttl);
   }
 }
 

@@ -9,7 +9,7 @@
 // ----------------- General macros -----------------
 #define __ERROR__   -1
 #define __OK__      0
-#define DEFAULT_TTL 60
+#define _DEFAULT_ARP_TTL_ 60
 #define LOOPBACK_IP "127.0.0.1"
 #define XARPD_PORT  5050
 #define LISTEN_ENQ 5 // listen queue size
@@ -24,13 +24,13 @@
 
 // ------------------ ARP protocol -------------------
 #define ARP_ETHERTYPE     0x0806
-
 #define ARP_HW_TYPE       0x0001
 #define ARP_PROTOTYPE     0x0800 // IP
 #define HW_ADDR_LEN       0x06 // 6 bytes
 #define PROTOCOL_ADDR_LEN 0x04 // 4 bytes
 #define ARP_REQUEST       0x01
-#define ARP_RESPONSE      0x02
+#define ARP_REPLY         0x02
+#define ARP_TIMEOUT       0x05 // 5 seconds
 // ---------------- End ARP protocol ------------------
 
 // ---------- Inter program communication ------------

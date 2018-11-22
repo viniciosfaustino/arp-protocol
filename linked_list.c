@@ -20,9 +20,9 @@ char removeLine(Node *table, unsigned int ipAddress)
 {
   // The table is blocked when a deletion is done
   Node *prev;
-  sem_wait(&(table->semaphore));
   prev = searchLine(table, ipAddress);
 
+  sem_wait(&(table->semaphore));
   if(prev != NULL)
   {
     Node *n = prev->next;
@@ -36,15 +36,21 @@ char removeLine(Node *table, unsigned int ipAddress)
   return __ERROR__;
 }
 
+// always returns the previous node to the desired node
 Node* searchLine(Node *table, unsigned int ipAddress)
 {
+  sem_wait(&(table->semaphore));
   Node *n = table;
   while(n->next != NULL)
   {
     if((n->next)->ipAddress == ipAddress)
+    {
+      sem_post(&(table->semaphore));
       return n;
+    }
     n = n->next;
   }
+  sem_post(&(table->semaphore));
   return NULL;
 }
 

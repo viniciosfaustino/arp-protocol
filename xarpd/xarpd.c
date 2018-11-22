@@ -13,6 +13,7 @@
 #include <net/if.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h> // used to build the timeout argument for sem_timedwait
 
 #include "../my_interface.h"
 #include "../definitions.h"
@@ -28,11 +29,18 @@
 #define ETH_ADDR_LEN	6
 
 // Global ugly variables
+
+// interfaces things
 MyInterface *my_ifaces;
 sem_t *ifaceMutexes;
 int numIfaces;
 
+// arp table
 Node arpTable;
+short int currentTTL = _DEFAULT_ARP_TTL_;
+
+// mutex for server thread used in xarp res
+sem_t serverSemaphore;
 
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
@@ -75,7 +83,8 @@ void print_usage()
 
 
 // Break this function to implement the ARP functionalities.
-void doProcess(unsigned char* packet, int len) {
+void doProcess(unsigned char* packet, int len, MyInterface *iface)
+{
 	if(!len || len < MIN_PACKET_SIZE)
 		return;
 
@@ -85,14 +94,24 @@ void doProcess(unsigned char* packet, int len) {
 	{
     unsigned char* arpPacket = (packet + 14);
     struct arp_hdr *arp = (struct arp_hdr*) arpPacket;
-    if (ntohs(arp->arp_op) == 1)
+		unsigned short type;
+		type = ntohs(arp->arp_op);
+    if (type == ARP_REQUEST)
     {
-      //search the address in the interface table
-
+			// Sees if this iface has the destination ip of the arp packet
+      if(ntohl(arp->arp_dpa) == iface->ipAddress)
+			{
+				char *reply = buildArpReply(iface->ipAddress, iface->macAddress, ntohl(arp->arp_spa), arp->arp_sha);
+				sendArpPacket(reply, iface);
+				free(reply);
+			}
     }
     else
     {
-      // I don't know what to do yet
+			if(type == ARP_REPLY)
+			{
+					// adds to list and wakes server thread
+			}
     }
 		// ARP
 		//...
@@ -102,7 +121,7 @@ void doProcess(unsigned char* packet, int len) {
 
 
 // This function should be one thread for each interface.
-void read_iface(MyInterface *arg)
+void read_iface(void *arg)
 {
   MyInterface *ifn;
   ifn = (MyInterface*) arg;
@@ -127,7 +146,7 @@ void read_iface(MyInterface *arg)
 			fprintf(stderr, "ERROR: %s\n", strerror(errno));
 			exit(1);
 		}
-		doProcess(packet_buffer, n);
+		doProcess(packet_buffer, n, ifn);
 	}
 }
 /* */
@@ -258,12 +277,10 @@ void delLine(unsigned int ipAddress)
 	removeLine(&arpTable, ipAddress);
 }
 
-void resolveIP(unsigned int ip)
+void resolveIP(unsigned int ip, int socket)
 {
 	// first thing is to look for the ip at the arp table
-	sem_wait(&arpTable.semaphore);
-	Node *line = searchLine(&arpTable, ip)
-	sem_post(&arpTable.semaphore);
+	Node *line = searchLine(&arpTable, ip);
 
 	if(line == NULL) // line not found
 	{
@@ -285,13 +302,41 @@ void resolveIP(unsigned int ip)
 		if(i < numIfaces) // ie some iface's network matches with ip resquested network
 		{
 			char *request = buildArpRequest(ifaceIP, ifaceMAC, ip);
-			sendArpRequest(request, &my_ifaces[i]);
+			sendArpPacket(request, &my_ifaces[i]);
 			free(request);
+
+			// get time info
+			clockid_t clockID = CLOCK_REALTIME; // this clock has the time in seconds
+																					 // and nanoseconds since THE EPOCH
+																					 // what happens when the representation ends ?? POW
+
+			struct timespec ts; //  struct to stores the time
+			clock_gettime(clockID, &ts);
+			ts.tv_sec += ARP_TIMEOUT;
 
 			// waits for an answer
 			// locks the interface for receiving packets
+			int ret = sem_timedwait(&serverSemaphore, &ts);
+
+			if(ret != ETIMEDOUT) // ie: timeout was not exceeded
+			{
+				line = searchLine(&arpTable, ip);
+			}
 		}
 	}
+	char response[9];
+	if(line == NULL) // ie error
+	{
+		response[0] = __ERROR__;
+	}
+	else
+	{
+		response[0] == __OK__;
+		short int ttl = htons(line->next->ttl);
+		memcpy(response+1, line->next->macAddress, 6);
+		memcpy(response+7, &ttl, 2);
+	}
+	_send(socket, (char*) &response, 9);
 }
 
 void server()
@@ -375,7 +420,8 @@ void server()
 
 				case RES_IP:
 					ip = ntohl(*(unsigned int*) message);
-					resolveIP(ip);
+					newsockfd = _accept(sockfd, (struct sockaddr*) &cli_addr);
+					resolveIP(ip, newsockfd);
 					break;
 
 				default:
@@ -422,8 +468,10 @@ int main(int argc, char** argv)
 {
 	arpTable.next = NULL;
 	sem_init(&(arpTable.semaphore), 0, 1);
-	int i;
 
+	sem_init(&serverSemaphore, 0 , 0);
+
+	int i;
 	if (argc < 2)
 		print_usage();
 
