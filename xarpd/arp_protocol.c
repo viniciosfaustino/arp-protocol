@@ -52,7 +52,7 @@ char *buildArpPacket(unsigned int myIP, unsigned char *myMAC,
   arp_req->arp_hd = htons(ARP_HW_TYPE);
   arp_req->arp_pr = htons(ARP_PROTOTYPE);
   arp_req->arp_hdl = HW_ADDR_LEN;
-  arp_req->arp_op = PROTOCOL_ADDR_LEN;
+  arp_req->arp_prl = PROTOCOL_ADDR_LEN;
   arp_req->arp_op = htons(type);
 
   // copy source mac ie myMAC and ip
@@ -93,6 +93,10 @@ int sendArpPacket(char *packet, MyInterface *iface)
   close(socket);
 
   if(bytes <= 0) exit(1);
+
+  // counting sent packet and sent bytes
+  iface->txPackets++;
+  iface->txBytes += bytes;
 
   if(bytes != packetLen) return __ERROR__;
 

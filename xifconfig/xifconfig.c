@@ -27,17 +27,17 @@ void printInterface(MyInterface *interface)
   addr.sin_addr.s_addr = interface->netMask;
   printf("Masc: %s\n",inet_ntoa(addr.sin_addr));
   printf("UP MTU: %d\n", ntohs(interface->mtu));
-  printf("RX packets: %d\t", ntohl(interface->rxPackets));
-  printf("TX packets: %d\n", ntohl(interface->txPackets));
+  printf("RX packets: %u\t", ntohl(interface->rxPackets));
+  printf("TX packets: %u\n", ntohl(interface->txPackets));
 
   int *rx = (int*) &(interface->rxBytes);
   rx[0] = ntohl(rx[0]);
   rx[1] = ntohl(rx[1]);
-  printf("RX bytes: %ld\t", *(unsigned long*)rx);
+  printf("RX bytes: %lu\t", *(unsigned long*)rx);
   int *tx = (int*) &(interface->txBytes);
   tx[0] = ntohl(tx[0]);
   tx[1] = ntohl(tx[1]);
-  printf("TX bytes: %ld\n", *(unsigned long*)tx);
+  printf("TX bytes: %lu\n", *(unsigned long*)tx);
 }
 
 void listIfaces()

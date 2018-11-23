@@ -5,6 +5,7 @@
 
 typedef struct
 {
+  unsigned int id;
   int		sockfd;
 	short		ttl;
   unsigned short mtu;
