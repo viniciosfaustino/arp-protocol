@@ -54,12 +54,16 @@ char *buildArpPacket(unsigned int myIP, unsigned char *myMAC,
   arp_req->arp_hdl = HW_ADDR_LEN;
   arp_req->arp_op = PROTOCOL_ADDR_LEN;
   arp_req->arp_op = htons(type);
-  // copy source mac ie myMAC
-  memcpy(arp_req->arp_sha, myMAC, 6);
-  arp_req->arp_spa = htonl(myIP);
 
+  // copy source mac ie myMAC and ip
+  memcpy(arp_req->arp_sha, myMAC, 6);
+  unsigned int aux = htonl(myIP);
+  memcpy(arp_req->arp_spa, &aux, 4);
+
+  // copy destination mac and ip
   memcpy(arp_req->arp_dha, dstMAC, 6);
-  arp_req->arp_dpa = htonl(dstIP);
+  aux = htonl(dstIP);
+  memcpy(arp_req->arp_dpa, &aux, 4);
 
   return packet;
 }
@@ -81,11 +85,10 @@ int sendArpPacket(char *packet, MyInterface *iface)
   device.sll_halen = HW_ADDR_LEN;
 
   // Instantiating a socket to send the packet
-  int socket = _socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+  int socket = _socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 
   // Sends the packet
-  int packetLen = sizeof(struct arp_hdr) + sizeof(struct ether_hdr);
-
+  unsigned int packetLen = sizeof(struct arp_hdr) + sizeof(struct ether_hdr);
   int bytes = sendto(socket, packet, packetLen, 0, (struct sockaddr*) &device, sizeof(struct sockaddr_ll));
   close(socket);
 

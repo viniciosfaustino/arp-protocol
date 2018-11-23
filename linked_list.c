@@ -4,9 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <semaphore.h>
+#include <string.h>
 
 char addLine(Node *table, Node *line, unsigned char type)
 {
+  // If the entry is already in the list delet it
+  // Just to maintain consistency
+  removeLine(table, line->ipAddress);
+
   sem_wait(&(table->semaphore));
   if(table == NULL) return __ERROR__;
   line->type = type;
@@ -82,7 +87,7 @@ void printTable(Node *table)
   }
 }
 
-Node* newLine(unsigned int ipAddress, unsigned char *macAddress, short int ttl)
+Node* newLine(unsigned int ipAddress, unsigned char *macAddress, short int ttl, char *ifName)
 {
   Node *node = (Node*) malloc(sizeof(Node));
   node->ipAddress = ipAddress;
@@ -93,6 +98,9 @@ Node* newLine(unsigned int ipAddress, unsigned char *macAddress, short int ttl)
   }
 
   node->ttl = ttl;
+
+  if(ifName != NULL) strcpy(node->ifaceName, ifName);
+
   node->next = NULL;
 
   sem_init(&(node->semaphore), 0, 1);

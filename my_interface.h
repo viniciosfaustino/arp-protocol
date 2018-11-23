@@ -1,7 +1,7 @@
 #ifndef __MY_INTERFACE__
 #define __MY_INTERFACE__
 
-#define MAX_IFNAME_LEN	22
+#include "definitions.h"
 
 typedef struct
 {

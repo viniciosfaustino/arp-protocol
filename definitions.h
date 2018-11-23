@@ -7,12 +7,13 @@
 
 
 // ----------------- General macros -----------------
-#define __ERROR__   -1
-#define __OK__      0
+#define __ERROR__         -1
+#define __OK__            0
 #define _DEFAULT_ARP_TTL_ 60
-#define LOOPBACK_IP "127.0.0.1"
-#define XARPD_PORT  5050
-#define LISTEN_ENQ 5 // listen queue size
+#define LOOPBACK_IP       "127.0.0.1"
+#define XARPD_PORT        5050
+#define LISTEN_ENQ        5 // listen queue size
+#define MAX_IFNAME_LEN    22
 // -------------- End general macros -----------------
 
 

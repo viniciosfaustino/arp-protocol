@@ -1,4 +1,4 @@
-output: linked_list.o xarpd.o communication.o arp_protocol.o ../definitions.h ../my_interface.h
+output: linked_list.o xarpd.o communication.o arp_protocol.o ../definitions.h ../my_interface.h protocol_headers.h
 	gcc -Wall -pedantic -std=c99 linked_list.o xarpd.o communication.o arp_protocol.o -o xarpd -pthread
 
 linked_list.o: ../linked_list.c ../linked_list.h
@@ -10,7 +10,7 @@ xarpd.o: xarpd.c
 communication.o: ../communication.c ../communication.h
 	gcc -c ../communication.c
 
-arp_protocol.o: arp_protocol.h arp_protocol.c
+arp_protocol.o: arp_protocol.h arp_protocol.c protocol_headers.h
 	gcc -c -Wall -pedantic -std=c99 arp_protocol.c
 
 clean:

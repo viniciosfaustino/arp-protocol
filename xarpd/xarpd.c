@@ -23,7 +23,7 @@
 #include "arp_protocol.h"
 
 #define MAX_PACKET_SIZE 65536
-#define MIN_PACKET_SIZE 64
+#define MIN_PACKET_SIZE 20
 
 #define MAX_IFACES	64
 #define ETH_ADDR_LEN	6
@@ -45,7 +45,7 @@ sem_t serverSemaphore;
 // Print an Ethernet address
 void print_eth_address(char *s, unsigned char *eth_addr)
 {
-	printf("%s %02X:%02X:%02X:%02X:%02X:%02X", s,
+	printf("%s %02X:%02X:%02X:%02X:%02X:%02X\n", s,
 	       eth_addr[0], eth_addr[1], eth_addr[2],
 	       eth_addr[3], eth_addr[4], eth_addr[5]);
 }
@@ -89,19 +89,36 @@ void doProcess(unsigned char* packet, int len, MyInterface *iface)
 		return;
 
 	struct ether_hdr* eth = (struct ether_hdr*) packet;
-
 	if(htons(0x0806) == eth->ether_type) // is a arp packet
 	{
-    unsigned char* arpPacket = (packet + 14);
-    struct arp_hdr *arp = (struct arp_hdr*) arpPacket;
-		unsigned short type;
-		type = ntohs(arp->arp_op);
+    struct arp_hdr *arp = (struct arp_hdr*) (packet + 14);
+		unsigned short type = ntohs(arp->arp_op);
+		unsigned int arp_dpa = * (unsigned int *) arp->arp_dpa;
+		unsigned int arp_spa = * (unsigned int *) arp->arp_spa;
+
     if (type == ARP_REQUEST)
     {
-			// Sees if this iface has the destination ip of the arp packet
-      if(ntohl(arp->arp_dpa) == iface->ipAddress)
+			// copy and paste code sorry. I'm in a hurry, but you don't have to worry
+			// searchs if some ie has the ip ip address requested
+			unsigned char i;
+			unsigned int ifaceIP, ifaceNetmask;
+			unsigned char ifaceMAC[6];
+			for(i = 0; i < numIfaces; i++)
 			{
-				char *reply = buildArpReply(iface->ipAddress, iface->macAddress, ntohl(arp->arp_spa), arp->arp_sha);
+				sem_wait(&ifaceMutexes[i]);
+				ifaceIP = my_ifaces[i].ipAddress;
+				ifaceNetmask = my_ifaces[i].netMask;
+				memcpy(ifaceMAC, my_ifaces[i].macAddress, 6);
+				sem_post(&ifaceMutexes[i]);
+
+				if(ifaceIP == ntohl(arp_dpa)) break;
+			}
+			
+			if(i < numIfaces) // there is an interface with the destination protocol address
+			{
+				printf("%s: THIS REQUEST WAS FOR ME!\n", my_ifaces[i].name);
+				// So we answer !
+				char *reply = buildArpReply(my_ifaces[i].ipAddress, my_ifaces[i].macAddress, ntohl(arp_spa), arp->arp_sha);
 				sendArpPacket(reply, iface);
 				free(reply);
 			}
@@ -110,7 +127,17 @@ void doProcess(unsigned char* packet, int len, MyInterface *iface)
     {
 			if(type == ARP_REPLY)
 			{
-					// adds to list and wakes server thread
+					printf("%s: ARP REPLY RECEIVED ", iface->name);
+					print_eth_address("FROM", arp->arp_sha);
+
+					if(ntohl(arp_dpa) == iface->ipAddress)
+					{
+						printf("%s: THIS REPLY WAS FOR ME!\n", iface->name);
+						// adds to list and wakes server thread
+						Node *_newLine = newLine(ntohl(arp_spa), arp->arp_sha, currentTTL, iface->name);
+						addLine(&arpTable, _newLine, DYNAMIC_ENTRY);
+						sem_post(&serverSemaphore);
+					}
 			}
     }
 		// ARP
@@ -244,7 +271,7 @@ unsigned char getIfaceIndex(const char *ifname)
 void configIface(const char *ifname, unsigned int ip, unsigned int mask)
 {
 	unsigned char i = getIfaceIndex(ifname);
-
+	printf("config iface: %u\n", ip);
 	if(i < numIfaces) // iface found
 	{
 		sem_wait(&ifaceMutexes[i]);
@@ -287,13 +314,13 @@ void resolveIP(unsigned int ip, int socket)
 		// searchs the ie in the same network of the requested ip address
 		unsigned char i;
 		unsigned int ifaceIP, ifaceNetmask;
-		unsigned char *ifaceMAC;
+		unsigned char ifaceMAC[6];
 		for(i = 0; i < numIfaces; i++)
 		{
 			sem_wait(&ifaceMutexes[i]);
 			ifaceIP = my_ifaces[i].ipAddress;
 			ifaceNetmask = my_ifaces[i].netMask;
-			ifaceMAC = my_ifaces[i].macAddress;
+			memcpy(ifaceMAC, my_ifaces[i].macAddress, 6);
 			sem_post(&ifaceMutexes[i]);
 
 			if((ifaceIP & ifaceNetmask) == (ip & ifaceNetmask)) break;
@@ -304,7 +331,7 @@ void resolveIP(unsigned int ip, int socket)
 			char *request = buildArpRequest(ifaceIP, ifaceMAC, ip);
 			sendArpPacket(request, &my_ifaces[i]);
 			free(request);
-
+			printf("ARP REQUEST SENT BY %s\n", my_ifaces[i].name);
 			// get time info
 			clockid_t clockID = CLOCK_REALTIME; // this clock has the time in seconds
 																					 // and nanoseconds since THE EPOCH
@@ -317,7 +344,7 @@ void resolveIP(unsigned int ip, int socket)
 			// waits for an answer
 			// locks the interface for receiving packets
 			int ret = sem_timedwait(&serverSemaphore, &ts);
-
+			printf("RET %d\n", ret);
 			if(ret != ETIMEDOUT) // ie: timeout was not exceeded
 			{
 				line = searchLine(&arpTable, ip);
@@ -405,7 +432,7 @@ void server()
           message += 4 + 6;
           short int ttl = ntohs(*(short int*)message);
 
-          Node *l = newLine(ip, message - 6, ttl);
+          Node *l = newLine(ip, message - 6, ttl, NULL);
           addLine(&arpTable, l, STATIC_ENTRY);
           break;
         case SHOW_TABLE:
